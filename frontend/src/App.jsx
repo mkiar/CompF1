@@ -1,24 +1,15 @@
 import { useState, useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Home from './Home.jsx'
+import Header from './Header.jsx'
 
-function App() {
-  const [message, setMessage] = useState('Loading...')
-
-  useEffect(() => {
-    fetch('http://localhost:8000/api/hello')
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message))
-      .catch((err) => {
-        console.error(err)
-        setMessage('Error connecting to Python')
-      })
-  }, [])
+export default function App() {
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>React + Python Template</h1>
-      <p>Backend response: <strong>{message}</strong></p>
-    </div>
+    <Header>
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </Header>
   )
 }
-
-export default App
