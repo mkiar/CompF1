@@ -11,8 +11,20 @@
     text-align: center;
 }
 
-.race-card-container {
+.race-cards-container {
     display: flex;
     justify-content: center;
-    flex-direction: row;
+    align-items: center;
+    gap: 75px;
+    border: 1px solid var(--border);
+    margin-left: 20px;
+    margin-right: 20px;
+    border-radius: 8px;
+    color: white;
+}
+
+.race-card {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
 }

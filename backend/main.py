@@ -28,13 +28,22 @@ def get_current_event():
     else:
         current_event = schedule.iloc[0]
         return {
-            "round_num": str(current_event['RoundNumber']),
             "message": "Current event retrieved successfully.",
+            "round_num": str(current_event['RoundNumber']),
             "name": current_event['EventName'],
             "date": current_event['EventDate'].strftime('%Y-%m-%d'),
             "location": current_event['Location'],
             "country": current_event['Country'],
-            "format": current_event['EventFormat'],
+            "s1": current_event['Session1'],
+            "s1_date": current_event['Session1DateUtc'],
+            "s2": current_event['Session2'],
+            "s2_date": current_event['Session2DateUtc'],
+            "s3": current_event['Session3'],
+            "s3_date": current_event['Session3DateUtc'],
+            "s4": current_event['Session4'],
+            "s4_date": current_event['Session4DateUtc'],
+            "s5": current_event['Session5'],
+            "s5_date": current_event['Session5DateUtc']
         }
     
     
