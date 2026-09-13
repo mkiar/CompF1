@@ -55,11 +55,15 @@ body {
   justify-content: center;
   gap: 1rem;
   padding: 1rem;
+}
+
+a {
   text-decoration: none;
+  color: lightgray;
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration: none;
   color: white;
 }
 

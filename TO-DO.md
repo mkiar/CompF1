@@ -1,6 +1,6 @@
 # TO-DO List (NOT IN ORDER)
 
-- Fix RaceCard formatDateTime function logic
+- ~~Fix RaceCard formatDateTime function logic~~
 - Figure out how to style RaceCard and whether to have many styles across all cards or keep consistent
 - Setup database and plan out schema to use
 - Plan league functionality, rules, options, player limits, and point system

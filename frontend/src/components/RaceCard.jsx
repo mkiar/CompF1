@@ -16,20 +16,24 @@ export default function RaceCard() {
   const formatDateTime = (date) => {
     const current_date = new Date();
     const session_date = new Date(date)
-    console.log("Current Date:", current_date.getHours());
-    console.log("Session Date:", session_date.getHours());
+    const differenceInMs = session_date.getTime() - current_date.getTime();
+    const differenceInDays = Math.floor(differenceInMs / 86400000);
+    const differenceInHours = Math.floor(differenceInMs / 3600000);
+    const differenceInMinutes = Math.floor(differenceInMs / 60000);
+    const differenceInSeconds = Math.floor(differenceInMs / 1000);
+    console.log('Difference in date:', differenceInDays, 'days,', differenceInHours, 'hours,', differenceInMinutes, 'minutes,', differenceInSeconds, 'seconds');
     
     if (current_date > session_date) {
         return "Completed";
     } else {
-        if (session_date.getDay() - current_date.getDay() > 0) {
-            return `In ~${current_date.getDay() - session_date.getDay()} days`;
-        } else if (current_date.getHours() - session_date.getHours() > 0) {
-            return `In ~${current_date.getHours() - session_date.getHours()} hours`;
-        } else if (current_date.getMinutes() - session_date.getMinutes() > 0) {
-            return `In ${session_date.getMinutes() - current_date.getMinutes()} minutes`;
-        } else if (current_date.getSeconds() - session_date.getSeconds() > 0) {
-            return `In ${current_date.getSeconds() - session_date.getSeconds()} seconds`;
+        if (differenceInDays > 0) {
+            return `In ${differenceInDays} days`;
+        } else if (differenceInHours > 0) {
+            return `In ${differenceInHours} hours`;
+        } else if (differenceInMinutes > 0) {
+            return `In ${differenceInMinutes} minutes`;
+        } else if (differenceInSeconds > 0) {
+            return `In ${differenceInSeconds} seconds`;
         } else {
             return "In Progress";
         }

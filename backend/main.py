@@ -35,15 +35,15 @@ def get_current_event():
             "location": current_event['Location'],
             "country": current_event['Country'],
             "s1": current_event['Session1'],
-            "s1_date": current_event['Session1DateUtc'],
+            "s1_date": current_event['Session1Date'],
             "s2": current_event['Session2'],
-            "s2_date": current_event['Session2DateUtc'],
+            "s2_date": current_event['Session2Date'],
             "s3": current_event['Session3'],
-            "s3_date": current_event['Session3DateUtc'],
+            "s3_date": current_event['Session3Date'],
             "s4": current_event['Session4'],
-            "s4_date": current_event['Session4DateUtc'],
+            "s4_date": current_event['Session4Date'],
             "s5": current_event['Session5'],
-            "s5_date": current_event['Session5DateUtc']
+            "s5_date": current_event['Session5Date']
         }
     
     
