@@ -9,7 +9,7 @@ export default function RaceCard() {
       .then(data => {
         setEventData(data);
     }).catch(error => {
-      console.error('Error fetching event data:', error);
+      alert("There was an error fetching the current event data. Please try again later.");
     });
   }, []);
 
@@ -21,7 +21,6 @@ export default function RaceCard() {
     const differenceInHours = Math.floor(differenceInMs / 3600000);
     const differenceInMinutes = Math.floor(differenceInMs / 60000);
     const differenceInSeconds = Math.floor(differenceInMs / 1000);
-    console.log('Difference in date:', differenceInDays, 'days,', differenceInHours, 'hours,', differenceInMinutes, 'minutes,', differenceInSeconds, 'seconds');
     
     if (current_date > session_date) {
         return "Completed";

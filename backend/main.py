@@ -5,8 +5,6 @@ import fastf1
 app = FastAPI()
 
 print(f"FastF1 version: {fastf1.__version__}")
-schedule = fastf1.get_events_remaining()
-print(schedule.iloc[0])
 
 app.add_middleware(
     CORSMiddleware,

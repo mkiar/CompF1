@@ -8,6 +8,7 @@ export default function Header({ children}) {
             <div className="header-left" style={{ marginRight: "auto" }}>
                 <a href='/'>Home</a>
             </div>
+            <a href='/dashboard'>Dashboard</a>
             <a href='/leagues'>Leagues</a>
             <a href='/duels'>Duels</a>
             <div className="header-right" style={{ marginLeft: "auto" }}>
