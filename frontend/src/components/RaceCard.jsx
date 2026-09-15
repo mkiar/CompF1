@@ -26,17 +26,16 @@ export default function RaceCard() {
         return "Completed";
     } else {
         if (differenceInDays > 0) {
-            return `In ${differenceInDays} days`;
+            return `In ${differenceInDays} day(s)`;
         } else if (differenceInHours > 0) {
-            return `In ${differenceInHours} hours`;
+            return `In ${differenceInHours} hour(s)`;
         } else if (differenceInMinutes > 0) {
-            return `In ${differenceInMinutes} minutes`;
+            return `In ${differenceInMinutes} minute(s)`;
         } else if (differenceInSeconds > 0) {
-            return `In ${differenceInSeconds} seconds`;
+            return `In ${differenceInSeconds} second(s)`;
         } else {
             return "In Progress";
         }
-        return session_date.getHours() + ":" + session_date.getMinutes() + ":" + session_date.getSeconds() + " UTC";
     }
   }
 
