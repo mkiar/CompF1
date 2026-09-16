@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+compf1.db
 
 # Editor directories and files
 .vscode/*

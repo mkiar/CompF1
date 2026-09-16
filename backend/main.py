@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import fastf1
+import sqlite3
+from database import init_db, get_db
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"FastF1 version: {fastf1.__version__}")
+    init_db()
+    yield
 
-print(f"FastF1 version: {fastf1.__version__}")
-
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,10 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.get("/api/hello")
-def read_root():
-    return {"message": "Hello from Python!"}
 
 @app.get('/api/current-event')
 def get_current_event():
