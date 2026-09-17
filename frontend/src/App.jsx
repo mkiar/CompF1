@@ -6,6 +6,7 @@ import Dashboard from './Dashboard.jsx'
 import Leagues from './Leagues.jsx'
 import Login from './Login.jsx'
 import Signup from './Signup.jsx'
+import Prediction from './Prediction'
 
 export default function App() {
 
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/leagues" element={<Leagues />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/make-prediction" element={<Prediction />} />
       </Routes>
     </Header>
   )

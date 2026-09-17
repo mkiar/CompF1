@@ -11,6 +11,7 @@ export default function Header({ children}) {
                 <a href='/'>Home</a>
             </div>
             <a href='/dashboard'>Dashboard</a>
+            <a href='/make-prediction'>Make Prediction</a>
             <a href='/leagues'>Leagues</a>
             <div className="header-right" style={{ marginLeft: "auto" }}>
                 {loginState ? 

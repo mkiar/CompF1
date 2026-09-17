@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import './home.css'
 import RaceCard from './components/RaceCard.jsx'
+import { useNavigate } from 'react-router-dom'
 
 export default function Home() {
-
+  const navigate = useNavigate()
   const redirectToLogin = () => {
     window.location.href='/login';
   }
@@ -15,7 +16,7 @@ export default function Home() {
         <h1>Welcome to CompF1</h1>
         <p className="web-summary">Put your F1 knowledge to the test. Compete with friends by predicting race results, driver performances, and key moments throughout each Grand Prix weekend. Earn points for accurate predictions, climb your league leaderboard, and prove who really knows Formula 1.</p>
       </div>
-      <button type="button" className="get-started-btn">Get Started</button>
+      <button type="button" className="get-started-btn" onClick={() => navigate("/login")}>Get Started</button>
       <div className="onboarding-info">
           <div className="onboarding-step">
             <h3>1. Create an Account</h3>
@@ -27,7 +28,7 @@ export default function Home() {
           </div>
           <div className="onboarding-step">
             <h3>3. Earn Points and Climb the Leaderboard</h3>
-            <p>Earn points for accurate predictions and climb your league leaderboard.</p>
+            <p>Earn points for accurate predictions and climb the global leaderboard.</p>
           </div>
           <div className="onboarding-step">
             <h3>4. Join or Create a League</h3>
