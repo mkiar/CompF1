@@ -1,33 +1,12 @@
 import { useState, useEffect } from 'react'
 import './prediction.css'
+import drivers from '../../drivers.json'
+
 export default function Prediction() {
   
   const [eventData, setEventData] = useState(null);
   const [currentTab, setCurrentTab] = useState(null);
-  const drivers = {
-    "Max Verstappen": "VER",
-    "Isack Hadjar": "HAD",
-    "Liam Lawson": "LAW",
-    "Arvid Lindblad": "LIN",
-    "Charles Leclerc": "LEC",
-    "Lewis Hamilton": "HAM",
-    "Lando Norris": "NOR",
-    "Oscar Piastri": "PIA",
-    "George Russell": "RUS",
-    "Kimi Antonelli": "ANT",
-    "Pierre Gasly": "GAS",
-    "Franco Colapinto": "COL",
-    "Esteban Ocon": "OCO",
-    "Oliver Bearman": "BEA",
-    "Nico Hülkenberg": "HUL",
-    "Gabriel Bortoleto": "BOR",
-    "Fernando Alonso": "ALO",
-    "Lance Stroll": "STR",
-    "Alexander Albon": "ALB",
-    "Carlos Sainz": "SAI",
-    "Sergio Pérez": "PER",
-    "Valterri Bottas": "BOT"
-  }
+  const [sessionOneElims, setSessionOneElims] = useState(null)
 
   useEffect(() => {
     fetch('http://localhost:8000/api/current-event')
@@ -41,6 +20,32 @@ export default function Prediction() {
 
   if (!eventData) {
     return <p>Loading event data...</p>
+  }
+
+  if (!currentTab) {
+    setCurrentTab(eventData.s1);
+  }
+
+  const descriptionHandler = (sessionName) => {
+    console.log(sessionName)
+    switch (sessionName) {
+      case "Practice 1":
+        return "Predict The Six Drivers Eliminated From Practice 1"
+      case "Practice 2":
+        return "Predict The Six Drivers Eliminated From Practice 2"
+      case "Practice 3": 
+        return "Predict The Practice 3 P1-P10 order"
+      case "Sprint Qualifying":
+        return "Predict The P1-P22 Sprint Qualifying Order"
+      case "Sprint":
+        return "Predict The P1-P22 Sprint Order"
+      case "Qualifying":
+        return "Predict The P1-P22 Qualifying Order"
+      case "Race":
+        return "Predict The P1-P22 Race Order"
+      default:
+        return "No Session was Found"
+    }
   }
 
   return (
@@ -59,11 +64,16 @@ export default function Prediction() {
         <p>Loading event data...</p>
         }
       </div>
-      <div className="prediction-btns">
-        {Object.entries(drivers).forEach((key, value) => {
-          <button>{key[0]}</button>
+      <h3>{descriptionHandler(currentTab)}</h3>
+      <div className="prediction-btns-section">
+        {Object.entries(drivers).map(([driver, code]) => {
+          return <button key={driver} className="prediction-btns">{driver}</button>
         })}
       </div>
+      <form className="prediction-form-submission">
+        <button type="submit" className="prediction-form-input">Submit</button>
+        <button type="reset" className="prediction-form-input">Reset Selections</button>
+      </form>
     </div>
   )
 }
