@@ -1,10 +1,10 @@
 # TO-DO List (NOT IN ORDER)
 
-- ~~Fix RaceCard formatDateTime function logic~~
+- ~~Fix RaceCard formatDateTime function logic~~ (Completed)
 - Figure out how to style RaceCard and whether to have many styles across all cards or keep consistent
-- Setup database and plan out schema to use
+- ~~Setup database and plan out schema to use~~ (Completed)
 - Plan league functionality, rules, options, player limits, and point system
-- Plan out duels where the user can 1v1 AI or another user in predicting upcoming race weekend
+- ~~Plan out duels where the user can 1v1 AI or another user in predicting upcoming race weekend~~ (Scraped)
 - Plan out and implement user login/signup while ensuring safe data collection through backend api calls
 - Figure out what necessary information I absolutely need from the FastF1 api without overcrowding webpage
 - Plan out structure of homepage UI ~~and what information I need to display to onboard users~~
