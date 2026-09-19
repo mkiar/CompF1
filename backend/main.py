@@ -6,6 +6,7 @@ from database import init_db, get_db
 from pwdlib import PasswordHash
 from pydantic import BaseModel
 from email_validator import validate_email
+import secrets
 
 class SignupRequest(BaseModel):
     username: str
@@ -16,6 +17,11 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class LeagueRequest(BaseModel):
+    name: str
+    owner_id: int
+    public: bool
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -117,3 +123,32 @@ def login(user: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     return { "message": "Login successful" }
+
+def generate_join_code():
+    join_code = secrets.randbelow(90000000) + 10000000
+    return str(join_code)
+
+@app.post("/api/create-league")
+def create_league(league: LeagueRequest):
+    db = get_db()
+
+    league_already_exists = db.execute(
+        "SELECT * from leagues WHERE name = ?", (league.name,)
+    ).fetchone()
+
+    if league_already_exists:
+        raise HTTPException(status_code=400, detail="League name already exists")
+
+    join_code = 0
+    
+    while True:
+        join_code = generate_join_code()
+        league_join_code_exists = db.execute("SELECT * from leagues WHERE join_code = ?", (join_code,)).fetchone()
+        if not league_join_code_exists:
+            break
+
+    db.execute("""
+        INSERT INTO leagues (name, owner_id, join_code, public) VALUES (?, ?, ?, ?)
+    """, (league.name, league.owner_id, join_code, league.public))
+
+    return { "message": "Successfully created league" }

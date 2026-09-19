@@ -19,7 +19,8 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 owner_id INTEGER NOT NULL,
-                join_code TEXT UNIQUE,
+                join_code TEXT UNIQUE NOT NULL,
+                public INTEGER NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
                 FOREIGN KEY (owner_id) REFERENCES users(id)            

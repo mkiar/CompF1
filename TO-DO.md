@@ -17,5 +17,7 @@
 - Change onboarding steps description
 - Change alert notification if signup api response is not okay
 - Email validation on signup page frontend
+- Test all API requests in cases of no user auth when needed and such
+
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks
