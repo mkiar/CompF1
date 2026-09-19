@@ -13,6 +13,10 @@ class SignupRequest(BaseModel):
     password: str
     confirm_password: str
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"FastF1 version: {fastf1.__version__}")
@@ -95,3 +99,21 @@ def user_signup(user: SignupRequest):
 
     return { "message": "Account was created successfully" }
 
+@app.post("/api/login")
+def login(user: LoginRequest):
+    db = get_db()
+
+    database_user = db.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (user.username,)
+    ).fetchone()
+
+    db.close()
+
+    if not database_user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    if not password_hasher.verify(user.password, database_user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    return { "message": "Login successful" }
