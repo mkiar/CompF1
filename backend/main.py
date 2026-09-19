@@ -1,9 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import fastf1
-import sqlite3
 from database import init_db, get_db
+from pwdlib import PasswordHash
+from pydantic import BaseModel
+from email_validator import validate_email
+
+class SignupRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    confirm_password: str
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,5 +54,44 @@ def get_current_event():
             "s5": current_event['Session5'],
             "s5_date": current_event['Session5Date']
         }
+
+password_hasher = PasswordHash.recommended();
+
+def validSignupParams(username, email, password, confirm_password):
+    if password != confirm_password:
+        return False
+    if len(username) < 3 or len(username) > 20:
+        return False
+    if not validate_email(email):
+        return False
+    if len(password) < 8 or len(password) > 64:
+        return False
+
+    return True
+
+@app.post('/api/signup')
+def user_signup(user: SignupRequest):
+    if not validSignupParams(user.username, user.email, user.password, user.confirm_password):
+        return { "message": "Invalid Signup Form Request"}
+    db = get_db()
+    cursor = db.cursor()
+    existing_user = cursor.execute("""
+        SELECT * FROM users
+        WHERE email = ? OR username = ?
+    """, (user.email, user.username)).fetchone()
+    if existing_user:
+        db.close()
+        raise HTTPException(status_code=400, detail="Username or email already exists")
+
     
-    
+    hashed = password_hasher.hash(user.password)
+
+    cursor.execute("""
+        INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)
+    """, (user.username, user.email, hashed))
+
+    db.commit()
+    db.close()
+
+    return { "message": "Account was created successfully" }
+

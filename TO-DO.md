@@ -15,5 +15,7 @@
 - Correctly identify where api calls are coming from to ensure safety from malicious actors
 - Create a points system among prediction categories
 - Change onboarding steps description
+- Change alert notification if signup api response is not okay
+- Email validation on signup page frontend
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks
