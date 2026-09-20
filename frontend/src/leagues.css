@@ -1,0 +1,41 @@
+.leagues-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tab-btns {
+    width: 300px;
+    height: 50px;
+}
+
+.selected-tab-content {
+    display: flex;
+    flex-direction: column;
+    margin-top: 25px;
+}
+
+.create-league-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 50px;
+}
+
+.create-league-btns:hover {
+    cursor: pointer;
+}
+
+.join-league-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 8px;
+    padding: 50px;
+}
+
+.join-league-btns:hover {
+    cursor: pointer;
+}

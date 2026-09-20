@@ -18,6 +18,7 @@
 - Change alert notification if signup api response is not okay
 - Email validation on signup page frontend
 - Test all API requests in cases of no user auth when needed and such
+- Determine to keep current tab layout for leagues or combine join league and create league under view public leagues
 
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks

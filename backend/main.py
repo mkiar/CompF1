@@ -22,6 +22,7 @@ class LeagueRequest(BaseModel):
     name: str
     owner_id: int
     public: bool
+    member_limit: int
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -148,7 +149,7 @@ def create_league(league: LeagueRequest):
             break
 
     db.execute("""
-        INSERT INTO leagues (name, owner_id, join_code, public) VALUES (?, ?, ?, ?)
-    """, (league.name, league.owner_id, join_code, league.public))
+        INSERT INTO leagues (name, owner_id, join_code, public, member_limit) VALUES (?, ?, ?, ?, ?)
+    """, (league.name, league.owner_id, join_code, league.public, league.member_limit))
 
     return { "message": "Successfully created league" }

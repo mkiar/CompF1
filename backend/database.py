@@ -21,6 +21,7 @@ def init_db():
                 owner_id INTEGER NOT NULL,
                 join_code TEXT UNIQUE NOT NULL,
                 public INTEGER NOT NULL,
+                member_limit INTEGER DEFAULT 25,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
                 FOREIGN KEY (owner_id) REFERENCES users(id)            

@@ -27,7 +27,6 @@ export default function Prediction() {
   }
 
   const descriptionHandler = (sessionName) => {
-    console.log(sessionName)
     switch (sessionName) {
       case "Practice 1":
         return "Predict The Six Drivers Eliminated From Practice 1"
