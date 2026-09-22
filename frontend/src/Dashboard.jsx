@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import './dashboard.css'
+import { useAuth } from './components/AuthState';
 
 export default function Dashboard() {
 
   const [eventData, setEventData] = useState(null);
+  const { user } = useAuth()
 
   useEffect(() => {
     fetch('http://localhost:8000/api/current-event')
@@ -61,7 +63,7 @@ export default function Dashboard() {
         <h4>Placeholder Race History</h4>
       </div>
       <div className="middle-container">
-        <h1>Hello Placeholder!</h1>
+        <h1>Hello {user.username}!</h1>
         <div className="prediction-summary">
           {eventData ? 
           <> 

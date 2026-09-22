@@ -189,6 +189,28 @@ def login(user: LoginRequest, response: Response):
         }
     }
 
+@app.post("/api/logout")
+def logout(request: Request, response: Response):
+    session_token = request.cookies.get("session")
+
+    if session_token:
+        db = get_db()
+        db.execute(
+            """
+            DELETE FROM sessions
+            WHERE token = ?
+            """,
+            (session_token,)
+        )
+        db.commit()
+        db.close()
+
+    response.delete_cookie("session")
+
+    return {
+        "message": "Logged out successfully"
+    }
+
 def generate_join_code():
     join_code = secrets.randbelow(90000000) + 10000000
     return str(join_code)

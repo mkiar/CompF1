@@ -3,7 +3,7 @@ import "./login.css";
 import { useAuth } from "./components/AuthState";
 
 export default function Login() {
-  const { setUser } = useAuth()
+  const { setUser, user } = useAuth()
 
   const handleLoginRequest = async (e) => {
     e.preventDefault();
@@ -46,6 +46,7 @@ export default function Login() {
           maxLength="20"
           className="login-inputs"
           name="username"
+          required
         ></input>
         <input
           type="password"
@@ -55,6 +56,7 @@ export default function Login() {
           minLength="8"
           maxLength="64"
           name="password"
+          required
         ></input>
         <button type="submit" className="login-inputs">
           Login

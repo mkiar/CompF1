@@ -39,10 +39,10 @@ export default function Signup() {
     <div className="signup-container">
       <form className='signup-form' onSubmit={signupFormSubmission}>
         <h1>CompF1 Signup</h1>
-        <input type='text' placeholder='Username' className='signup-inputs' minLength='3' maxLength='20' name="username"></input>
-        <input type='email' placeholder='Email' className='signup-inputs' name="email"></input>
-        <input type='password' placeholder='Password' className='signup-inputs' name="password" onChange={(e) => setPassword(e.target.value)}></input>
-        <input type='password' placeholder='Confirm Password' className='signup-inputs' minLength="8" maxLength="64" name="confirm_password" onChange={(e) => setConfirmPassword(e.target.value)}></input>
+        <input type='text' placeholder='Username' className='signup-inputs' minLength='3' maxLength='20' name="username" required></input>
+        <input type='email' placeholder='Email' className='signup-inputs' name="email" required></input>
+        <input type='password' placeholder='Password' className='signup-inputs' name="password" onChange={(e) => setPassword(e.target.value)} required></input>
+        <input type='password' placeholder='Confirm Password' className='signup-inputs' minLength="8" maxLength="64" name="confirm_password" onChange={(e) => setConfirmPassword(e.target.value)} required></input>
         <button type='submit' className='signup-inputs'>Create Account</button>
       </form>
     </div>
