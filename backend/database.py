@@ -60,6 +60,16 @@ def init_db():
                 )
             );
         ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                expires_at TEXT NOT NULL,
+
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+        ''')
         conn.commit()
 
 def get_db():

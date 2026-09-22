@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import fastf1
@@ -7,6 +7,7 @@ from pwdlib import PasswordHash
 from pydantic import BaseModel
 from email_validator import validate_email
 import secrets
+from datetime import datetime, timezone
 
 class SignupRequest(BaseModel):
     username: str
@@ -66,6 +67,46 @@ def get_current_event():
             "s5_date": current_event['Session5Date']
         }
 
+def get_user_from_session(request: Request):
+    session_token = request.cookies.get("session")
+
+    if not session_token:
+        return None
+
+    db = get_db()
+
+    session = db.execute("""
+        SELECT users.id,
+               users.username,
+               sessions.expires_at
+        FROM sessions
+        JOIN users ON sessions.user_id = users.id
+        WHERE sessions.token = ? AND sessions.expires_at > datetime('now')
+        """, (session_token,)
+    ).fetchone()
+
+    db.close()
+
+    if not session:
+        return None
+
+    return session
+
+@app.get("/api/me")
+def get_current_user(request: Request):
+    user = get_user_from_session(request)
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
+    return {
+        "id": user["id"],
+        "username": user["username"],
+    }
+
 password_hasher = PasswordHash.recommended();
 
 def validSignupParams(username, email, password, confirm_password):
@@ -85,8 +126,7 @@ def user_signup(user: SignupRequest):
     if not validSignupParams(user.username, user.email, user.password, user.confirm_password):
         return { "message": "Invalid Signup Form Request"}
     db = get_db()
-    cursor = db.cursor()
-    existing_user = cursor.execute("""
+    existing_user = db.execute("""
         SELECT * FROM users
         WHERE email = ? OR username = ?
     """, (user.email, user.username)).fetchone()
@@ -97,7 +137,7 @@ def user_signup(user: SignupRequest):
     
     hashed = password_hasher.hash(user.password)
 
-    cursor.execute("""
+    db.execute("""
         INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)
     """, (user.username, user.email, hashed))
 
@@ -107,7 +147,7 @@ def user_signup(user: SignupRequest):
     return { "message": "Account was created successfully" }
 
 @app.post("/api/login")
-def login(user: LoginRequest):
+def login(user: LoginRequest, response: Response):
     db = get_db()
 
     database_user = db.execute(
@@ -115,15 +155,39 @@ def login(user: LoginRequest):
         (user.username,)
     ).fetchone()
 
-    db.close()
-
     if not database_user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     if not password_hasher.verify(user.password, database_user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    return { "message": "Login successful" }
+    session_token = secrets.token_urlsafe(32)
+
+    db.execute("""
+        INSERT INTO sessions (token, user_id, expires_at)
+        VALUES (?, ?, datetime('now', '+7 days'))
+        """,(session_token, database_user["id"])
+    )
+
+    db.commit()
+    db.close()
+
+    response.set_cookie(
+        key="session",
+        value=session_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 7 # this equates to 7 days
+    )
+
+    return {
+        "message": "Login successful",
+        "user": {
+            "id": database_user["id"],
+            "username": database_user["username"]
+        }
+    }
 
 def generate_join_code():
     join_code = secrets.randbelow(90000000) + 10000000
