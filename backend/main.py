@@ -22,12 +22,17 @@ class LoginRequest(BaseModel):
 class LeagueRequest(BaseModel):
     name: str
     owner_id: int
+    owner_username: str
     public: bool
     member_limit: int
 
 class JoinLeagueRequest(BaseModel):
     league_id: int
     join_code: str
+    user_id: int
+    user_username: str
+
+class MyLeagueRequest(BaseModel):
     user_id: int
 
 @asynccontextmanager
@@ -240,16 +245,16 @@ def create_league(league: LeagueRequest):
             break
 
     db.execute("""
-        INSERT INTO leagues (name, owner_id, join_code, public, member_limit) VALUES (?, ?, ?, ?, ?)
-    """, (league.name, league.owner_id, join_code, league.public, league.member_limit))
+        INSERT INTO leagues (name, owner_id, owner_username, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (league.name, league.owner_id, league.owner_username, join_code, league.public, league.member_limit, 1,))
 
     result = db.execute(""" 
         SELECT * from leagues WHERE name = ? AND owner_id = ?
     """, (league.name, league.owner_id,)).fetchone()
 
     db.execute("""
-        INSERT INTO league_members (league_id, user_id) VALUES (?, ?)
-    """, (result["id"], league.owner_id,))
+        INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
+    """, (result["id"], league.owner_id, league.owner_username,))
 
     db.commit()
     db.close()
@@ -262,37 +267,33 @@ def get_leagues():
 
     leagues_list = db.execute("""
         SELECT * from leagues WHERE public = 1
-    """).fetchmany(10)
+    """).fetchmany(15)
 
     leagues = [dict(league) for league in leagues_list]
 
     return { "leagues": leagues }
 
-@app.get("/api/join-league")
+@app.post("/api/join-league")
 def get_my_leagues(joinLeague: JoinLeagueRequest):
     db = get_db()
 
     already_in_league = db.execute("""
         SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (joinLeague.league_id, joinLeague.user_id,))
+    """, (joinLeague.league_id, joinLeague.user_id,)).fetchone()
 
     if already_in_league:
         raise HTTPException(status_code=400, detail="User is already in this league")
 
-    member_count = db.execute("""
-        SELECT * from league_members WHERE league_id = ?
-    """, (joinLeague.league_id,)).fetchall()
-
     league = db.execute("""
-        SELECT * from leagues WHERE join_code = ? AND member_limit < ? AND public = 1
-    """, (joinLeague.join_code, len(member_count)))
+        SELECT * from leagues WHERE join_code = ? AND member_limit < member_count AND public = 1
+    """, (joinLeague.join_code,))
 
     if not league:
         raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
 
     db.execute("""
-        INSERT INTO league_members (league_id, user_id) VALUES (?, ?)
-    """, (joinLeague.league_id, joinLeague.user_id,))
+        INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
+    """, (joinLeague.league_id, joinLeague.user_id, joinLeague.user_username,))
 
     db.commit()
     db.close()

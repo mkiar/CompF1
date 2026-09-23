@@ -19,9 +19,11 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 owner_id INTEGER NOT NULL,
+                owner_username TEXT NOT NULL,
                 join_code TEXT UNIQUE NOT NULL,
                 public INTEGER NOT NULL,
                 member_limit INTEGER DEFAULT 25,
+                member_count INTEGER NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
                 FOREIGN KEY (owner_id) REFERENCES users(id)            
@@ -31,6 +33,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS league_members (
                 league_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
+                user_username TEXT NOT NULL,
                 joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     
                 PRIMARY KEY (league_id, user_id),
