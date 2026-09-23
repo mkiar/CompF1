@@ -295,6 +295,10 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
         INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
     """, (joinLeague.league_id, joinLeague.user_id, joinLeague.user_username,))
 
+    db.execute("""
+        UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
+    """, (joinLeague.league_id,))
+
     db.commit()
     db.close()
 

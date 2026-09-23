@@ -1,41 +1,65 @@
 .leagues-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .tab-btns {
-    width: 300px;
-    height: 50px;
+  width: 300px;
+  height: 50px;
 }
 
 .selected-tab-content {
-    display: flex;
-    flex-direction: column;
-    margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
+  gap: 10px;
 }
 
 .create-league-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 50px;
 }
 
 .create-league-btns:hover {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .join-league-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    border-radius: 8px;
-    padding: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 50px;
 }
 
 .join-league-btns:hover {
-    cursor: pointer;
+  cursor: pointer;
+}
+
+.league-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid var(--border);
+  gap: 10px;
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+.join-league-card-btn {
+  background-color: green;
+  border-radius: 8px;
+  width: 65px;
+  height: 45px;
+  color: black;
+  font-size: medium;
+}
+
+.join-league-card-btn:hover {
+  cursor: pointer;
 }
