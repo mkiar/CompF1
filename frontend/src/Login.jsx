@@ -3,7 +3,7 @@ import "./login.css";
 import { useAuth } from "./components/AuthState";
 
 export default function Login() {
-  const { setUser, user } = useAuth()
+  const { setUser, user } = useAuth();
 
   const handleLoginRequest = async (e) => {
     e.preventDefault();
@@ -21,13 +21,13 @@ export default function Login() {
           username: e.target.username.value,
           password: e.target.password.value,
         }),
-      }).then(async response => {
+      }).then(async (response) => {
         if (!response.ok) {
-          const detail = await res.text();
+          const detail = await response.text();
           return alert(detail);
         }
-        const data = await response.json()
-        setUser(data.user)
+        const data = await response.json();
+        setUser(data.user);
       });
     } catch (err) {
       return alert("An error has occurred with login form request");
