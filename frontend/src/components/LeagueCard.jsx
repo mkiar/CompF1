@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAuth } from '../components/AuthState'
-export default function RaceCard({ league }) {
-  const { user } = useAuth()
+import { useAuth } from "../components/AuthState";
+export default function RaceCard({ league, needJoinBtn = false }) {
+  const { user } = useAuth();
 
   const joinLeagueRequest = async (e, leagueId) => {
     try {
@@ -15,7 +15,7 @@ export default function RaceCard({ league }) {
           league_id: leagueId,
           join_code: e.target.value,
           user_id: user.id,
-          user_username: user.username
+          user_username: user.username,
         }),
       }).then(async (response) => {
         if (!response.ok) {
@@ -26,19 +26,27 @@ export default function RaceCard({ league }) {
     } catch (err) {
       return alert("An error has occurred with join league request");
     }
-  }
+  };
 
   return (
     <div className="league-card">
-      <h3 style={{ marginRight: "500px"}}>
+      <h3 style={{ marginRight: "auto" }}>
         {league.name} created by {league.owner_username}
       </h3>
       <h3>
         {league.member_count} / {league.member_limit} Members
       </h3>
-      <button className="join-league-card-btn" value={league.join_code} onClick={(e) => joinLeagueRequest(e, league.id)}>
-        Join
-      </button>
+      {needJoinBtn ? (
+        <button
+          className="join-league-card-btn"
+          value={league.join_code}
+          onClick={(e) => joinLeagueRequest(e, league.id)}
+        >
+          Join
+        </button>
+      ) : (
+        <></>
+      )}
     </div>
   );
 }

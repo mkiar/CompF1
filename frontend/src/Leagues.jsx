@@ -6,6 +6,8 @@ import LeagueCard from "./components/LeagueCard";
 export default function Leagues() {
   const [currentTab, setCurrentTab] = useState(null);
   const [leaguesList, setLeaguesList] = useState(null);
+  const [myLeaguesList, setMyLeaguesList] = useState(null);
+  const [searchLeague, setSearchLeague] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -52,6 +54,45 @@ export default function Leagues() {
     }
   };
 
+  const myLeagueRequest = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/my-leagues", {
+        method: "GET",
+        credentials: "include",
+      }).then(async (response) => {
+        if (!response.ok) {
+          const detail = await response.text();
+          return alert(detail);
+        }
+        const data = await response.json();
+        setMyLeaguesList(data.leagues);
+      });
+    } catch (err) {
+      return alert("An error has occurred with my league request");
+    }
+  };
+
+  const searchLeagueRequest = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/search-league?join_code=${e.target.join_code.value}`,
+        {
+          method: "GET",
+        },
+      ).then(async (response) => {
+        if (!response.ok) {
+          const detail = await response.text();
+          return alert(detail);
+        }
+        const data = await response.json();
+        setSearchLeague(data.league);
+      });
+    } catch (err) {
+      return alert("An error has occurred with search league request");
+    }
+  };
+
   const getTabContent = (selectedTab) => {
     switch (selectedTab) {
       case "create-league":
@@ -84,6 +125,7 @@ export default function Leagues() {
                   min="2"
                   max="25"
                   name="league_mems_limit"
+                  placeholder="25"
                   required
                 ></input>
               </label>
@@ -98,7 +140,13 @@ export default function Leagues() {
           <>
             {leaguesList ? (
               Object.values(leaguesList).map((league) => {
-                return <LeagueCard league={league} key={league.id}/>;
+                return (
+                  <LeagueCard
+                    league={league}
+                    key={league.id}
+                    needJoinBtn={true}
+                  />
+                );
               })
             ) : (
               <p>Loading Public Leagues...</p>
@@ -106,23 +154,43 @@ export default function Leagues() {
           </>
         );
       case "my-leagues":
-        return <></>;
+        return (
+          <>
+            {myLeaguesList ? (
+              Object.values(myLeaguesList).map((league) => {
+                return <LeagueCard league={league} key={league.id} />;
+              })
+            ) : (
+              <p>Loading Your Leagues...</p>
+            )}
+          </>
+        );
       case "join-leagues":
         return (
           <>
-            <form className="join-league-form">
+            <form className="join-league-form" onSubmit={searchLeagueRequest}>
               <h3>Join a League</h3>
               <input
                 type="text"
                 minLength="8"
                 maxLength="8"
                 placeholder="Join Code"
+                name="join_code"
                 required
               ></input>
-              <button type="submit" className="join-league-btns">
-                Join
+              <button type="submit" className="search-league-btns">
+                Search
               </button>
             </form>
+            {searchLeague ? (
+              <>
+                {" "}
+                <h3>Search Result</h3>{" "}
+                <LeagueCard league={searchLeague} needJoinBtn={true} />{" "}
+              </>
+            ) : (
+              <></>
+            )}
           </>
         );
       default:
@@ -151,7 +219,7 @@ export default function Leagues() {
           View Public Leagues
         </button>
         <button
-          onClick={() => setCurrentTab("my-leagues")}
+          onClick={() => [setCurrentTab("my-leagues"), myLeagueRequest()]}
           className="tab-btns"
         >
           My Leagues

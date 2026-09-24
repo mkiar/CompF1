@@ -1,7 +1,7 @@
 .leagues-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  text-align: center;
 }
 
 .tab-btns {
@@ -19,10 +19,15 @@
 .create-league-form {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 50px;
+  padding: 50px; 
+  width: 50%;
+  margin-left: 20%;
+  margin-right: 20%;
 }
 
 .create-league-btns:hover {
@@ -35,6 +40,9 @@
   gap: 10px;
   border-radius: 8px;
   padding: 50px;
+  border: 1px solid var(--border);
+  margin-right: 40%;
+  margin-left: 40%;
 }
 
 .join-league-btns:hover {
@@ -45,10 +53,13 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   gap: 10px;
-  padding-left: 25px;
-  padding-right: 25px;
+  margin-right: 25px;
+  margin-left: 25px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .join-league-card-btn {
