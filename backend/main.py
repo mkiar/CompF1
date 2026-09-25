@@ -7,6 +7,7 @@ from pwdlib import PasswordHash
 from pydantic import BaseModel
 from email_validator import validate_email
 import secrets
+from functools import lru_cache
 
 class SignupRequest(BaseModel):
     username: str
@@ -53,8 +54,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get('/api/current-event')
-def get_current_event():
+@lru_cache(maxsize=1)
+def load_current_event():
     schedule = fastf1.get_events_remaining()
     if (schedule.empty):
         return {"message": "There are no more races for this season."}
@@ -78,6 +79,14 @@ def get_current_event():
             "s5": current_event['Session5'],
             "s5_date": current_event['Session5Date']
         }
+
+@app.get('/api/current-event')
+def get_current_event():
+    schedule = load_current_event()
+    if schedule is None:
+        return {"message": "There are no more races for this season."}
+    
+    return schedule
 
 def get_user_from_session(request: Request):
     session_token = request.cookies.get("session")
