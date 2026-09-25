@@ -19,6 +19,6 @@
 - ~~Email validation on signup page frontend~~ (Handled on backend instead)
 - Test all API requests in cases of no user auth when needed and such
 - ~~Determine to keep current tab layout for leagues or combine join league and create league under view public leagues~~ (Keeping current tab layout for easy navigation)
-
+- Remove instances of user id and user name in models in backend since I can just get that information from the session cookies 
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks

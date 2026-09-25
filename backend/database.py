@@ -48,8 +48,7 @@ def init_db():
                 season INTEGER NOT NULL,
                 round_number INTEGER NOT NULL,
                 session_type TEXT NOT NULL,
-                position INTEGER NOT NULL,
-                driver_code TEXT NOT NULL,
+                prediction_json TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
            
                 FOREIGN KEY (user_id) REFERENCES users(id),

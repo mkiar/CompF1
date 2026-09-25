@@ -62,15 +62,14 @@
   padding-right: 10px;
 }
 
-.join-league-card-btn {
-  background-color: green;
+.league-card-btn {
   border-radius: 8px;
   width: 65px;
   height: 45px;
   color: black;
-  font-size: medium;
+  font-size: small;
 }
 
-.join-league-card-btn:hover {
+.league-card-btn:hover {
   cursor: pointer;
 }

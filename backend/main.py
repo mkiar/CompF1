@@ -7,7 +7,6 @@ from pwdlib import PasswordHash
 from pydantic import BaseModel
 from email_validator import validate_email
 import secrets
-from datetime import datetime, timezone
 
 class SignupRequest(BaseModel):
     username: str
@@ -32,8 +31,11 @@ class JoinLeagueRequest(BaseModel):
     user_id: int
     user_username: str
 
-class MyLeagueRequest(BaseModel):
-    user_id: int
+class LeaveLeagueRequest(BaseModel):
+    league_id: int
+
+class DisbandLeagueRequest(BaseModel):
+    league_id: int
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -166,9 +168,11 @@ def login(user: LoginRequest, response: Response):
     ).fetchone()
 
     if not database_user:
+        db.close()
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     if not password_hasher.verify(user.password, database_user["password_hash"]):
+        db.close()
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     session_token = secrets.token_urlsafe(32)
@@ -234,6 +238,7 @@ def create_league(league: LeagueRequest):
     ).fetchone()
 
     if league_already_exists:
+        db.close()
         raise HTTPException(status_code=400, detail="League name already exists")
 
     join_code = 0
@@ -269,9 +274,28 @@ def get_leagues():
         SELECT * from leagues WHERE public = 1
     """).fetchmany(15)
 
+    db.close()
+
     leagues = [dict(league) for league in leagues_list]
 
     return { "leagues": leagues }
+
+@app.get("/api/search-league")
+def search_league(join_code: str):
+    db = get_db()
+
+    find_league = db.execute("""
+        SELECT * from leagues WHERE join_code = ? AND public = 1
+    """, (join_code,)).fetchone()
+
+    if not find_league:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid join code or privated league")
+
+    db.close()
+
+    return { "league": dict(find_league) }
+
 
 @app.post("/api/join-league")
 def get_my_leagues(joinLeague: JoinLeagueRequest):
@@ -282,6 +306,7 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
     """, (joinLeague.league_id, joinLeague.user_id,)).fetchone()
 
     if already_in_league:
+        db.close()
         raise HTTPException(status_code=400, detail="User is already in this league")
 
     league = db.execute("""
@@ -289,6 +314,7 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
     """, (joinLeague.join_code,))
 
     if not league:
+        db.close()
         raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
 
     db.execute("""
@@ -303,3 +329,74 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
     db.close()
 
     return { "message": "Successfully joined league" }
+
+@app.get("/api/my-leagues")
+def get_my_leagues(request: Request):
+    user = get_user_from_session(request)
+    db = get_db()
+
+    my_leagues = db.execute("""
+        SELECT l.* from leagues l INNER JOIN league_members m ON l.id = m.league_id WHERE m.user_id = ?
+    """, (user["id"],)).fetchall()
+
+    if not my_leagues:
+        db.close()
+        return { "leagues": [] }
+
+    db.close()
+
+    leagues = [dict(league) for league in my_leagues]
+    return { "leagues": leagues }
+
+@app.post("/api/leave-league")
+def leave_league(request: Request, league: LeaveLeagueRequest):
+    user = get_user_from_session(request)
+    db = get_db()
+
+    find_league = db.execute("""
+        SELECT * from league_members WHERE league_id = ? AND user_id = ?
+    """, (league.league_id, user["id"],)).fetchone()
+
+    if not find_league:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid league")
+
+    db.execute("""
+        DELETE from league_members WHERE league_id = ? and user_id = ?
+    """, (league.league_id, user["id"],))
+
+    db.execute("""
+        UPDATE leagues SET member_count = member_count - 1 WHERE id = ?
+    """, (league.league_id,))
+
+    db.commit()
+    db.close()
+
+    return { "message": "Successfully left league" }
+
+@app.post("/api/disband-league")
+def disband_league(request: Request, league: DisbandLeagueRequest):
+    user = get_user_from_session(request)
+    db = get_db()
+
+    find_league = db.execute("""
+        SELECT * from leagues WHERE id = ? AND owner_id = ?
+    """, (league.league_id, user["id"],)).fetchone()
+
+    if not find_league:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid league")
+
+    db.execute("""
+        DELETE from leagues WHERE id = ? and owner_id = ?
+    """, (league.league_id, user["id"],))
+    db.execute("""
+        DELETE from league_members WHERE league_id = ?
+    """, (league.league_id,))
+
+    db.commit()
+    db.close()
+
+    return { "message": "Successfully disbanded league" }
+
+    
