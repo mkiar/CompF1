@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from email_validator import validate_email
 import secrets
 from functools import lru_cache
+from datetime import date
+import json
 
 class SignupRequest(BaseModel):
     username: str
@@ -37,6 +39,11 @@ class LeaveLeagueRequest(BaseModel):
 
 class DisbandLeagueRequest(BaseModel):
     league_id: int
+
+class PredictionRequest(BaseModel):
+    session_type: str
+    selections: list[str]
+    round_num: int
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -408,4 +415,29 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
     return { "message": "Successfully disbanded league" }
 
+@app.post("/api/make-prediction")
+def make_prediction(request: Request, prediction: PredictionRequest):
+    print("RECIEVED")
+    user = get_user_from_session(request)
+    db = get_db()
+
+    made_prediction = db.execute(""" 
+        SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
+    """, (user["id"], date.today().year, prediction.round_num, prediction.session_type,)).fetchone()
+
+    if made_prediction:
+        db.execute("""
+            UPDATE predictions SET prediction_json = ? WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
+        """, (json.dumps(prediction.selections), user["id"], date.today().year, prediction.round_num, prediction.session_type,))
+    else:
+        db.execute("""
+            INSERT INTO predictions (user_id, season, round_number, session_type, prediction_json) VALUES (?, ?, ?, ?, ?)
+        """, (user["id"], date.today().year, prediction.round_num, prediction.session_type, json.dumps(prediction.selections),))
+
+    db.commit()
+    db.close()
+
+    return {
+        "message": "Successfully made prediction"
+    }
     

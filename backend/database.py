@@ -57,8 +57,7 @@ def init_db():
                     user_id,
                     season,
                     round_number,
-                    session_type,
-                    position
+                    session_type
                 )
             );
         ''')
