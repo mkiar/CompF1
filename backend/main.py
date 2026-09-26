@@ -349,6 +349,13 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
 @app.get("/api/my-leagues")
 def get_my_leagues(request: Request):
     user = get_user_from_session(request)
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
     db = get_db()
 
     my_leagues = db.execute("""
@@ -367,6 +374,13 @@ def get_my_leagues(request: Request):
 @app.post("/api/leave-league")
 def leave_league(request: Request, league: LeaveLeagueRequest):
     user = get_user_from_session(request)
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
     db = get_db()
 
     find_league = db.execute("""
@@ -393,6 +407,13 @@ def leave_league(request: Request, league: LeaveLeagueRequest):
 @app.post("/api/disband-league")
 def disband_league(request: Request, league: DisbandLeagueRequest):
     user = get_user_from_session(request)
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
     db = get_db()
 
     find_league = db.execute("""
@@ -417,8 +438,14 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
 @app.post("/api/make-prediction")
 def make_prediction(request: Request, prediction: PredictionRequest):
-    print("RECIEVED")
     user = get_user_from_session(request)
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
     db = get_db()
 
     made_prediction = db.execute(""" 
@@ -440,4 +467,29 @@ def make_prediction(request: Request, prediction: PredictionRequest):
     return {
         "message": "Successfully made prediction"
     }
-    
+
+@app.get("/api/check-predictions")
+def check_predictions(request: Request):
+    user = get_user_from_session(request)
+    db = get_db()
+    event = load_current_event()
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
+    if event is None:
+        return {"message": "There are no races to check predictions"}
+
+    get_predictions = db.execute("""
+        SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ?
+    """, (user["id"], date.today().year, event["round_num"],)).fetchall()
+
+    if get_predictions is None:
+        return { "message": "No predictions to show for this race" }
+
+    predictions = [dict(prediction) for prediction in get_predictions]
+
+    return { "predictions": predictions }

@@ -61,13 +61,24 @@ def init_db():
                 )
             );
         ''')
-
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sessions (
                 token TEXT PRIMARY KEY,
                 user_id INTEGER NOT NULL,
                 expires_at TEXT NOT NULL,
 
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS points (
+                user_id INTEGER NOT NULL,
+                season INTEGER NOT NULL,
+                round_number INTEGER NOT NULL,
+                event_name TEXT NOT NULL,
+                session_type TEXT NOT NULL,
+                points INTEGER NOT NULL,
+        
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         ''')

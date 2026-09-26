@@ -4,6 +4,7 @@ import { useAuth } from "./components/AuthState";
 
 export default function Dashboard() {
   const [eventData, setEventData] = useState(null);
+  const [predictionData, setPredictionData] = useState([])
   const { user } = useAuth();
 
   useEffect(() => {
@@ -15,6 +16,18 @@ export default function Dashboard() {
       .catch((error) => {
         alert(
           "There was an error fetching the current event data. Please try again later.",
+        );
+      });
+      fetch("http://localhost:8000/api/check-predictions", {
+        credentials: "include"
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        setPredictionData(data);
+      })
+      .catch((error) => {
+        alert(
+          "There was an error fetching the prediction data. Please try again later.",
         );
       });
   }, []);
@@ -49,6 +62,20 @@ export default function Dashboard() {
     }
   };
 
+  let s1PredictionCheck;
+  let s2PredictionCheck;
+  let s3PredictionCheck;
+  let s4PredictionCheck;
+  let s5PredictionCheck;
+
+  if (predictionData.predictions) {
+    s1PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 1")
+    s2PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 2" || e.session_type === "Sprint Qualifying")
+    s3PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 3" || e.session_type === "Sprint")
+    s4PredictionCheck = predictionData.predictions.find(e => e.session_type === "Qualifying")
+    s5PredictionCheck = predictionData.predictions.find(e => e.session_type === "Race")
+  }
+
   return (
     <div className="dashboard-container">
       <div className="points-history">
@@ -70,11 +97,11 @@ export default function Dashboard() {
               <h3>{eventData.name}</h3>
               <h4>{formatPredictionClosureTime(eventData.s1_date)}</h4>
               <div className="prediction-submission-check">
-                <h4>{eventData.s1} - Submission Check Placeholder</h4>
-                <h4>{eventData.s2} - Submission Check Placeholder</h4>
-                <h4>{eventData.s3} - Submission Check Placeholder</h4>
-                <h4>{eventData.s4} - Submission Check Placeholder</h4>
-                <h4>{eventData.s5} - Submission Check Placeholder</h4>
+                <h4>{eventData.s1} - {s1PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
+                <h4>{eventData.s2} - {s2PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
+                <h4>{eventData.s3} - {s3PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
+                <h4>{eventData.s4} - {s4PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
+                <h4>{eventData.s5} - {s5PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
               </div>
             </>
           ) : (
