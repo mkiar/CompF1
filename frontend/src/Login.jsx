@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import "./login.css";
 import { useAuth } from "./components/AuthState";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { setUser, user } = useAuth();
+  const navigate = useNavigate()
 
   const handleLoginRequest = async (e) => {
     e.preventDefault();
@@ -23,11 +25,12 @@ export default function Login() {
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
         const data = await response.json();
         setUser(data.user);
+        navigate('/dashboard')
       });
     } catch (err) {
       return alert("An error has occurred with login form request");

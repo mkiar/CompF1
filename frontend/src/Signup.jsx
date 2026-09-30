@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Signup.css";
 
 export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate()
 
   const signupFormSubmission = async (e) => {
     e.preventDefault();
@@ -24,11 +26,13 @@ export default function Signup() {
           password: e.target.password.value,
           confirm_password: e.target.confirm_password.value,
         }),
-      });
-      if (!res.ok) {
-        const detail = await res.text();
-        return alert(detail);
-      }
+      }).then(async (response) => {
+            if (!response.ok) {
+                const message = await response.json();
+                return alert(message.detail);
+            }
+            navigate('/login')
+      })
     } catch (err) {
       return alert("An error has occurred with signup form request");
     }

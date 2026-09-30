@@ -45,8 +45,8 @@ export default function Leagues() {
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
       });
     } catch (err) {
@@ -61,8 +61,8 @@ export default function Leagues() {
         credentials: "include",
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
         const data = await response.json();
         setMyLeaguesList(data.leagues);
@@ -82,8 +82,8 @@ export default function Leagues() {
         },
       ).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
         const data = await response.json();
         setSearchLeague(data.league);

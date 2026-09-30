@@ -19,8 +19,8 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
       });
     } catch (err) {
@@ -41,8 +41,8 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
       });
     } catch (err) {
@@ -63,8 +63,8 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
       });
     } catch (err) {

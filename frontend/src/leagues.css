@@ -28,6 +28,7 @@
   width: 50%;
   margin-left: 20%;
   margin-right: 20%;
+  background-color: var(--card-background);
 }
 
 .join-league-form {
@@ -39,6 +40,7 @@
   border: 1px solid var(--border);
   margin-right: 40%;
   margin-left: 40%;
+  background-color: var(--card-background);
 }
 
 .league-card {
@@ -52,6 +54,7 @@
   margin-left: 25px;
   padding-left: 10px;
   padding-right: 10px;
+  background-color: var(--card-background);
 }
 
 .league-card-btn {

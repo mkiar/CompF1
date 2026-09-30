@@ -17,6 +17,7 @@
   border: 1px solid var(--border);
   width: 100%;
   text-align: center;
+  background-color: var(--card-background);
 }
 
 .season-summary {
@@ -25,4 +26,5 @@
   gap: 20px;
   border: 1px solid var(--border);
   padding: 10px;
+  background-color: var(--card-background);
 }

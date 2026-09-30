@@ -13,9 +13,7 @@ export default function Home() {
       <div className="web-info">
         <h1>Welcome to CompF1</h1>
         <p className="web-summary">
-          Put your F1 knowledge to the test. Compete with friends by predicting
-          race results, driver performances, and key moments throughout each
-          Grand Prix weekend. Earn points for accurate predictions, climb your
+          Do you have ball knowledge of F1? If so, make predictions for each race session throughout the Grand Prix week. Earn points for accurate predictions, climb your
           league leaderboard, and prove who really knows Formula 1.
         </p>
       </div>
@@ -47,15 +45,13 @@ export default function Home() {
         <div className="onboarding-step">
           <h3>2. Make Predictions</h3>
           <p>
-            Before each race session, make your predictions on race results,
-            driver performances, and key moments.
+            Before each race session, make your predictions on session results.
           </p>
         </div>
         <div className="onboarding-step">
           <h3>3. Earn Points and Climb the Leaderboard</h3>
           <p>
-            Earn points for accurate predictions and climb the global
-            leaderboard.
+            Earn points for accurate predictions and climb your league and global leaderboard.
           </p>
         </div>
         <div className="onboarding-step">

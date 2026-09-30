@@ -47,7 +47,7 @@ export default function RaceCard() {
   }
 
   return (
-    <div className="race-cards-container">
+    <div className="race-card-container">
       {eventData ? (
         <>
           <div className="race-card">
