@@ -201,7 +201,7 @@ export default function Prediction() {
     console.log(selectionArray)
     
     try {
-      const res = await fetch("http://localhost:8000/api/make-prediction", {
+      const res = await fetch("http://localhost:8000/api/predictions", {
         method: "POST",
         credentials: "include",
         headers: {

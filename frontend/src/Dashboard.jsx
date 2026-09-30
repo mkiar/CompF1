@@ -18,7 +18,7 @@ export default function Dashboard() {
           "There was an error fetching the current event data. Please try again later.",
         );
       });
-      fetch("http://localhost:8000/api/check-predictions", {
+      fetch("http://localhost:8000/api/predictions", {
         credentials: "include"
       })
       .then((response) => response.json())

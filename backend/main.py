@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from email_validator import validate_email
 import secrets
 from functools import lru_cache
-from datetime import date
+from datetime import date, datetime, timezone
 import json
 
 class SignupRequest(BaseModel):
@@ -436,8 +436,18 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
     return { "message": "Successfully disbanded league" }
 
-@app.post("/api/make-prediction")
+@app.post("/api/predictions")
 def make_prediction(request: Request, prediction: PredictionRequest):
+    event = load_current_event()
+    current_time = datetime.now(timezone.utc)
+    first_session_start_time = event["s1_date"]
+    
+    if current_time > first_session_start_time:
+        raise HTTPException(
+            status_code=401,
+            detail="Making predictions is closed"
+        )
+    
     user = get_user_from_session(request)
 
     if user is None:
@@ -468,7 +478,7 @@ def make_prediction(request: Request, prediction: PredictionRequest):
         "message": "Successfully made prediction"
     }
 
-@app.get("/api/check-predictions")
+@app.get("/api/predictions")
 def check_predictions(request: Request):
     user = get_user_from_session(request)
     db = get_db()
