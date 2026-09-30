@@ -62,3 +62,8 @@ a:hover {
   text-decoration: none;
   color: white;
 }
+
+button:hover {
+  cursor: pointer;
+  color: white;
+}
