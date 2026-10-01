@@ -14,8 +14,6 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
         body: JSON.stringify({
           league_id: leagueId,
           join_code: e.target.value,
-          user_id: user.id,
-          user_username: user.username,
         }),
       }).then(async (response) => {
         if (!response.ok) {

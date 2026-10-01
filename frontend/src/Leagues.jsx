@@ -39,8 +39,6 @@ export default function Leagues() {
         credentials: "include",
         body: JSON.stringify({
           name: league_name,
-          owner_id: user.id,
-          owner_username: user.username,
           public: `${league_visibility === "Public" ? true : false}`,
           member_limit: league_mems_limit,
         }),

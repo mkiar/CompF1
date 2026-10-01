@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import fastf1
 from database import init_db, get_db
 from pwdlib import PasswordHash
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 from email_validator import validate_email
 import secrets
 from functools import lru_cache
@@ -12,38 +12,60 @@ from datetime import date, datetime, timezone
 import json
 
 class SignupRequest(BaseModel):
-    username: str
+    username: str = Field(min_length=3, max_length=20, alphanumeric=True)
     email: str
-    password: str
-    confirm_password: str
+    password: str = Field(min_length=8, max_length=64)
+    confirm_password: str = Field(min_length=8, max_length=64)
+
+    @field_validator("username")
+    def username_alphanumeric(cls, v):
+        if not v.isalnum():
+            raise ValueError("Username must be alphanumeric")
+        return v
+
+    @field_validator("email")
+    def email_valid(cls, v):
+        try:
+            validate_email(v)
+        except Exception:
+            raise ValueError("Invalid email address")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "SignupRequest":
+        if self.password != self.confirm_password:
+            raise ValueError("Password and confirm password do not match")
+        return self
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length=3, max_length=20)
+    password: str = Field(min_length=8, max_length=64)
+
+    @field_validator("username")
+    def username_alphanumeric(cls, v):
+        if not v.isalnum():                
+            raise ValueError("Username must be alphanumeric")
+        return v
 
 class LeagueRequest(BaseModel):
-    name: str
-    owner_id: int
-    owner_username: str
+    name: str = Field(min_length=3, max_length=20)
     public: bool
-    member_limit: int
+    member_limit: int = Field(gt=0, lt=26)
 
 class JoinLeagueRequest(BaseModel):
-    league_id: int
-    join_code: str
-    user_id: int
-    user_username: str
+    league_id: int = Field(gt=0)
+    join_code: str = Field(min_length=9, max_length=9, max_digits=9)
 
 class LeaveLeagueRequest(BaseModel):
-    league_id: int
+    league_id: int = Field(gt=0)
 
 class DisbandLeagueRequest(BaseModel):
-    league_id: int
+    league_id: int = Field(gt=0)
 
 class PredictionRequest(BaseModel):
     session_type: str
     selections: list[str]
-    round_num: int
+    round_num: int = Field(gt=0)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -135,24 +157,10 @@ def get_current_user(request: Request):
         "username": user["username"],
     }
 
-password_hasher = PasswordHash.recommended();
-
-def validSignupParams(username, email, password, confirm_password):
-    if password != confirm_password:
-        return False
-    if len(username) < 3 or len(username) > 20:
-        return False
-    if not validate_email(email):
-        return False
-    if len(password) < 8 or len(password) > 64:
-        return False
-
-    return True
+password_hasher = PasswordHash.recommended()
 
 @app.post('/api/signup')
 def user_signup(user: SignupRequest):
-    if not validSignupParams(user.username, user.email, user.password, user.confirm_password):
-        return { "message": "Invalid Signup Form Request"}
     db = get_db()
     existing_user = db.execute("""
         SELECT * FROM users
@@ -246,7 +254,15 @@ def generate_join_code():
     return str(join_code)
 
 @app.post("/api/create-league")
-def create_league(league: LeagueRequest):
+def create_league(request: Request, league: LeagueRequest):
+    user = get_user_from_session(request)
+
+    if user is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Not logged in"
+            )
+    
     db = get_db()
 
     league_already_exists = db.execute(
@@ -267,15 +283,15 @@ def create_league(league: LeagueRequest):
 
     db.execute("""
         INSERT INTO leagues (name, owner_id, owner_username, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (league.name, league.owner_id, league.owner_username, join_code, league.public, league.member_limit, 1,))
+    """, (league.name, user["id"], user["username"], join_code, league.public, league.member_limit, 1,))
 
     result = db.execute(""" 
         SELECT * from leagues WHERE name = ? AND owner_id = ?
-    """, (league.name, league.owner_id,)).fetchone()
+    """, (league.name, user["id"],)).fetchone()
 
     db.execute("""
         INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-    """, (result["id"], league.owner_id, league.owner_username,))
+    """, (result["id"], user["id"], user["username"],))
 
     db.commit()
     db.close()
@@ -314,12 +330,19 @@ def search_league(join_code: str):
 
 
 @app.post("/api/join-league")
-def get_my_leagues(joinLeague: JoinLeagueRequest):
+def get_my_leagues(request: Request, joinLeague: JoinLeagueRequest):
+    user = get_user_from_session(request)
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
     db = get_db()
 
     already_in_league = db.execute("""
         SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (joinLeague.league_id, joinLeague.user_id,)).fetchone()
+    """, (joinLeague.league_id, user["id"],)).fetchone()
 
     if already_in_league:
         db.close()
@@ -335,7 +358,7 @@ def get_my_leagues(joinLeague: JoinLeagueRequest):
 
     db.execute("""
         INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-    """, (joinLeague.league_id, joinLeague.user_id, joinLeague.user_username,))
+    """, (joinLeague.league_id, user["id"], user["username"],))
 
     db.execute("""
         UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
@@ -438,6 +461,14 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
 @app.post("/api/predictions")
 def make_prediction(request: Request, prediction: PredictionRequest):
+    user = get_user_from_session(request)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
     event = load_current_event()
     current_time = datetime.now(timezone.utc)
     first_session_start_time = event["s1_date"]
@@ -448,13 +479,6 @@ def make_prediction(request: Request, prediction: PredictionRequest):
             detail="Making predictions is closed"
         )
     
-    user = get_user_from_session(request)
-
-    if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Not logged in"
-        )
     
     db = get_db()
 
@@ -481,7 +505,6 @@ def make_prediction(request: Request, prediction: PredictionRequest):
 @app.get("/api/predictions")
 def check_predictions(request: Request):
     user = get_user_from_session(request)
-    db = get_db()
     event = load_current_event()
 
     if user is None:
@@ -493,13 +516,18 @@ def check_predictions(request: Request):
     if event is None:
         return {"message": "There are no races to check predictions"}
 
+    db = get_db()
+
     get_predictions = db.execute("""
         SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ?
     """, (user["id"], date.today().year, event["round_num"],)).fetchall()
 
     if get_predictions is None:
+        db.close()
         return { "message": "No predictions to show for this race" }
 
     predictions = [dict(prediction) for prediction in get_predictions]
+
+    db.close()
 
     return { "predictions": predictions }
