@@ -6,19 +6,19 @@
 - Plan league functionality, rules, options, ~~member limits~~, and point system
 - ~~Plan out duels where the user can 1v1 AI or another user in predicting upcoming race weekend~~ (Scraped)
 - ~~Plan out and implement user login/signup while ensuring safe data collection through backend api calls~~ (Completed for now, have some new possible ideas)
-- Figure out what necessary information I absolutely need from the FastF1 api without overcrowding webpage
+- ~~Figure out what necessary information I absolutely need from the FastF1 api without overcrowding webpage~~ (Completed)
 - ~~Plan out structure of homepage UI and what information I need to display to onboard users~~ (Completed)
 - ~~Plan out structure of leagues UI~~ (Completed)
 - ~~Replace CompF1 description with something better~~ (Completed)
 - Plan a list of colors to use consistently throughout the web page
-- Add input and data validation
-- Correctly identify where api calls are coming from to ensure safety from malicious actors
+- Add input and data validation to ensure outside api calls can't put random data in db
 - Create a points system among prediction categories
 - ~~Change onboarding steps description~~ (Completed)
 - ~~Change alert notification if signup api response is not okay~~ (Completed)
 - ~~Email validation on signup page frontend~~ (Handled on backend instead)
 - Test all API requests in cases of no user auth when needed and such
 - ~~Determine to keep current tab layout for leagues or combine join league and create league under view public leagues~~ (Keeping current tab layout for easy navigation)
-- Remove instances of user id and user name in models in backend since I can just get that information from the session cookies 
+- ~~Remove instances of user id and user name in models in backend since I can just get that information from the session cookies~~ (Completed)
+- Add global leaderboard maybe
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks
