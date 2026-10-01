@@ -197,8 +197,6 @@ export default function Prediction() {
     } else if (sessionName === "Race") {
       selectionArray = predictions.s5
     }
-
-    console.log(selectionArray)
     
     try {
       const res = await fetch("http://localhost:8000/api/predictions", {
@@ -217,6 +215,7 @@ export default function Prediction() {
           const detail = await response.text();
           return alert(detail);
         }
+        return alert(`Your ${sessionName} predictions have been submitted successfully!`);
       });
     } catch (err) {
       return alert(`An error has occurred with make prediction request`);

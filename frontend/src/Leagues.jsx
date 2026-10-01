@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./leagues.css";
 import { useAuth } from "./components/AuthState";
 import LeagueCard from "./components/LeagueCard";
@@ -48,6 +49,8 @@ export default function Leagues() {
           const message = await response.json();
           return alert(message.detail);
         }
+        setCurrentTab("my-leagues");
+        myLeagueRequest();
       });
     } catch (err) {
       return alert("An error has occurred with create league request");

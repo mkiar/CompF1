@@ -22,6 +22,7 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
           const message = await response.json();
           return alert(message.detail);
         }
+        window.location.reload();
       });
     } catch (err) {
       return alert("An error has occurred with join league request");
@@ -44,6 +45,7 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
           const message = await response.json();
           return alert(message.detail);
         }
+        window.location.reload();
       });
     } catch (err) {
       return alert("An error has occurred with leave league request");
@@ -66,6 +68,7 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
           const message = await response.json();
           return alert(message.detail);
         }
+        window.location.reload();
       });
     } catch (err) {
       return alert("An error has occurred with disband league request");
