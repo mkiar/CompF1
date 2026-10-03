@@ -12,7 +12,7 @@ from datetime import date, datetime, timezone
 import json
 
 class SignupRequest(BaseModel):
-    username: str = Field(min_length=3, max_length=20, alphanumeric=True)
+    username: str = Field(min_length=3, max_length=20)
     email: str
     password: str = Field(min_length=8, max_length=64)
     confirm_password: str = Field(min_length=8, max_length=64)
@@ -54,7 +54,7 @@ class LeagueRequest(BaseModel):
 
 class JoinLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
-    join_code: str = Field(min_length=9, max_length=9, max_digits=9)
+    join_code: str = Field(min_length=8, max_length=8, max_digits=8)
 
 class LeaveLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
@@ -62,10 +62,52 @@ class LeaveLeagueRequest(BaseModel):
 class DisbandLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
 
+P1_DRIVER_CAP = 6
+P2_DRIVER_CAP = 6
+P3_DRIVER_CAP = 10
+SPRINT_QUALI_DRIVER_CAP = 22
+SPRINT_RACE_DRIVER_CAP = 22
+QUALI_DRIVER_CAP = 22
+RACE_DRIVER_CAP = 22
+
 class PredictionRequest(BaseModel):
     session_type: str
     selections: list[str]
     round_num: int = Field(gt=0)
+
+    @field_validator("session_type")
+    def session_type_valid(cls, v):
+        valid_session_types = ["Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying", "Sprint Race","Qualifying", "Race"]
+        if v not in valid_session_types:
+            raise ValueError("Invalid session type")
+        return v
+    
+    @model_validator(mode="after")
+    def selections_valid(self) -> "PredictionRequest":
+        if self.session_type == "Practice 1" and len(self.selections) != P1_DRIVER_CAP:
+            raise ValueError(f"Practice 1 requires exactly {P1_DRIVER_CAP} selections")
+        elif self.session_type == "Practice 2" and len(self.selections) != P2_DRIVER_CAP:
+            raise ValueError(f"Practice 2 requires exactly {P2_DRIVER_CAP} selections")
+        elif self.session_type == "Practice 3" and len(self.selections) != P3_DRIVER_CAP:
+            raise ValueError(f"Practice 3 requires exactly {P3_DRIVER_CAP} selections")
+        elif self.session_type == "Sprint Qualifying" and len(self.selections) != SPRINT_QUALI_DRIVER_CAP:
+            raise ValueError(f"Sprint Qualifying requires exactly {SPRINT_QUALI_DRIVER_CAP} selections")
+        elif self.session_type == "Sprint Race" and len(self.selections) != SPRINT_RACE_DRIVER_CAP:
+            raise ValueError(f"Sprint Race requires exactly {SPRINT_RACE_DRIVER_CAP} selections")
+        elif self.session_type == "Qualifying" and len(self.selections) != QUALI_DRIVER_CAP:
+            raise ValueError(f"Qualifying requires exactly {QUALI_DRIVER_CAP} selections")
+        elif self.session_type == "Race" and len(self.selections) != RACE_DRIVER_CAP:
+            raise ValueError(f"Race requires exactly {RACE_DRIVER_CAP} selections")
+
+        drivers = json.load(open("../drivers.json", "r"))
+
+        if set(self.selections).issubset(set(dict.values(drivers))) == False:
+            raise ValueError("Selections must contain driver names")
+
+        if len(set(self.selections)) != len(self.selections):
+            raise ValueError("Can't have duplicate driver selections")
+
+        return self
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -169,8 +211,6 @@ def user_signup(user: SignupRequest):
     if existing_user:
         db.close()
         raise HTTPException(status_code=400, detail="Username or email already exists")
-
-    
     hashed = password_hasher.hash(user.password)
 
     db.execute("""
