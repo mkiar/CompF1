@@ -52,6 +52,12 @@ class LeagueRequest(BaseModel):
     public: bool
     member_limit: int = Field(gt=0, lt=26)
 
+    @field_validator("name")
+    def valid_league_name(cls, v):
+        if not all(c.isalpha() or c.isspace() for c in v):
+            raise ValueError("League name must be alphabetic with whitespaces allowed")
+        return v
+
 class JoinLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
     join_code: str = Field(min_length=8, max_length=8, max_digits=8)
@@ -207,7 +213,7 @@ def user_signup(user: SignupRequest):
     existing_user = db.execute("""
         SELECT * FROM users
         WHERE email = ? OR username = ?
-    """, (user.email, user.username)).fetchone()
+    """, (user.email, user.username.lower())).fetchone()
     if existing_user:
         db.close()
         raise HTTPException(status_code=400, detail="Username or email already exists")
@@ -306,7 +312,7 @@ def create_league(request: Request, league: LeagueRequest):
     db = get_db()
 
     league_already_exists = db.execute(
-        """SELECT * from leagues WHERE name = ?""", (league.name,)
+        """SELECT * from leagues WHERE name = ?""", (league.name.lower(),)
     ).fetchone()
 
     if league_already_exists:
