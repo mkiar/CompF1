@@ -6,9 +6,9 @@ export default function Prediction() {
   const [eventData, setEventData] = useState(null);
   const [currentTab, setCurrentTab] = useState(null);
   const [predictions, setPredictions] = useState({ "s1": [], "s2": [], "s3": [], "s4": [], "s5": [] })
-  const P1_DRIVER_CAP = 6
-  const P2_DRIVER_CAP = 6
-  const P3_DRIVER_CAP = 10
+  const P1_DRIVER_CAP = 22
+  const P2_DRIVER_CAP = 22
+  const P3_DRIVER_CAP = 22
   const SPRINT_QUALI_DRIVER_CAP = 22
   const SPRINT_RACE_DRIVER_CAP = 22
   const QUALI_DRIVER_CAP = 22
@@ -34,27 +34,6 @@ export default function Prediction() {
   if (!currentTab) {
     setCurrentTab(eventData.s1);
   }
-
-  const descriptionHandler = (sessionName) => {
-    switch (sessionName) {
-      case "Practice 1":
-        return "Predict the Six Drivers Eliminated From Practice 1";
-      case "Practice 2":
-        return "Predict the Six Drivers Eliminated From Practice 2";
-      case "Practice 3":
-        return "Predict the Practice 3 P1-P10 order";
-      case "Sprint Qualifying":
-        return "Predict the P1-P22 Sprint Qualifying Order";
-      case "Sprint":
-        return "Predict the P1-P22 Sprint Order";
-      case "Qualifying":
-        return "Predict the P1-P22 Qualifying Order";
-      case "Race":
-        return "Predict the P1-P22 Race Order";
-      default:
-        return "No Session was Found";
-    }
-  };
 
   const predictionArrayHandler = (sessionName, driverCode) => {
     switch (sessionName) {
@@ -212,8 +191,8 @@ export default function Prediction() {
         }),
       }).then(async (response) => {
         if (!response.ok) {
-          const detail = await response.text();
-          return alert(detail);
+          const message = await response.json();
+          return alert(message.detail);
         }
         return alert(`Your ${sessionName} predictions have been submitted successfully!`);
       });
@@ -264,7 +243,7 @@ export default function Prediction() {
         )}
       </div>
       <div className="prediction-btns-section">
-        <h3>{descriptionHandler(currentTab)}</h3>
+        <h3>Predict the P1-P22 {currentTab} Order</h3>
         <h5>You can select the same driver across different sessions. To change your prediction, resubmit your selections under your preferred session.</h5>
         {Object.entries(drivers).map(([driver, code]) => {
           return (
@@ -281,12 +260,12 @@ export default function Prediction() {
       <div className="prediction-selections">
         {currentTab === "Practice 1" ? predictions.s1.map((driver, index) => {
           return (
-          <h5>P{QUALI_DRIVER_CAP - P1_DRIVER_CAP + index + 1} {driver}</h5>
+          <h5>P{index + 1} {driver}</h5>
           )
         }) : <></>}
         {currentTab === "Practice 2" ? predictions.s2.map((driver, index) => {
           return (
-          <h5>P{QUALI_DRIVER_CAP - P2_DRIVER_CAP - P1_DRIVER_CAP + index + 1} {driver}</h5>
+          <h5>P{index + 1} {driver}</h5>
           )
         }) : <></>}
         {currentTab === "Practice 3" ? predictions.s3.map((driver, index) => {
