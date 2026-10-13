@@ -78,7 +78,8 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
       <h3 style={{ marginRight: "auto" }}>
         {league.name} created by {league.owner_username}
       </h3>
-      <h3>
+      <h3>Join Code: {league.join_code}</h3>
+      <h3 style={{ marginLeft: "auto" }}>
         {league.member_count} / {league.member_limit} Members
       </h3>
       {needJoinBtn ? (

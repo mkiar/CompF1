@@ -42,10 +42,6 @@ export default function RaceCard() {
     }
   };
 
-  if (!eventData) {
-    return <p>Loading event data...</p>;
-  }
-
   return (
     <div className="race-card-container">
       {eventData ? (

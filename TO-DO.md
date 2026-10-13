@@ -11,7 +11,7 @@
 - ~~Plan out structure of leagues UI~~ (Completed)
 - ~~Replace CompF1 description with something better~~ (Completed)
 - Plan a list of colors to use consistently throughout the web page
-- Add input and data validation to ensure outside api calls can't put random data in db
+- ~~Add input and data validation to ensure outside api calls can't put random data in db~~ (Completed)
 - Create a points system among prediction categories
 - ~~Change onboarding steps description~~ (Completed)
 - ~~Change alert notification if signup api response is not okay~~ (Completed)
@@ -20,5 +20,6 @@
 - ~~Determine to keep current tab layout for leagues or combine join league and create league under view public leagues~~ (Keeping current tab layout for easy navigation)
 - ~~Remove instances of user id and user name in models in backend since I can just get that information from the session cookies~~ (Completed)
 - Add global leaderboard maybe
+- Fix ValueError alert error messages on frontend
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks

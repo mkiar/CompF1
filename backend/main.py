@@ -10,6 +10,7 @@ import secrets
 from functools import lru_cache
 from datetime import date, datetime, timezone
 import json
+from scoring import score_session
 
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=20)
@@ -68,9 +69,9 @@ class LeaveLeagueRequest(BaseModel):
 class DisbandLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
 
-P1_DRIVER_CAP = 6
-P2_DRIVER_CAP = 6
-P3_DRIVER_CAP = 10
+P1_DRIVER_CAP = 22
+P2_DRIVER_CAP = 22
+P3_DRIVER_CAP = 22
 SPRINT_QUALI_DRIVER_CAP = 22
 SPRINT_RACE_DRIVER_CAP = 22
 QUALI_DRIVER_CAP = 22
@@ -120,6 +121,8 @@ async def lifespan(app: FastAPI):
     print(f"FastF1 version: {fastf1.__version__}")
     init_db()
     yield
+
+print(score_session(2026, 16, "Practice 1"))
 
 app = FastAPI(lifespan=lifespan)
 
