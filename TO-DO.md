@@ -21,5 +21,6 @@
 - ~~Remove instances of user id and user name in models in backend since I can just get that information from the session cookies~~ (Completed)
 - Add global leaderboard maybe
 - Fix ValueError alert error messages on frontend
+- League owners should have a settings menu to change league visibility and manage league members
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks
