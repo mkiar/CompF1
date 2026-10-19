@@ -4,8 +4,8 @@ import { useAuth } from "./components/AuthState";
 
 export default function Dashboard() {
   const [eventData, setEventData] = useState(null);
-  const [predictionData, setPredictionData] = useState([])
-  const [raceHistoryData, setRaceHistoryData] = useState([])
+  const [predictionData, setPredictionData] = useState([]);
+  const [seasonHistoryData, setSeasonHistoryData] = useState([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -19,9 +19,9 @@ export default function Dashboard() {
           "There was an error fetching the current event data. Please try again later.",
         );
       });
-      fetch("http://localhost:8000/api/predictions", {
-        credentials: "include"
-      })
+    fetch("http://localhost:8000/api/predictions", {
+      credentials: "include",
+    })
       .then((response) => response.json())
       .then((data) => {
         setPredictionData(data);
@@ -31,16 +31,16 @@ export default function Dashboard() {
           "There was an error fetching the prediction data. Please try again later.",
         );
       });
-      fetch("http://localhost:8000/api/race-history", {
-        credentials: "include"
-      })
+    fetch("http://localhost:8000/api/season-history", {
+      credentials: "include",
+    })
       .then((response) => response.json())
       .then((data) => {
-        setRaceHistoryData(data.race_history);
+        setSeasonHistoryData(data);
       })
       .catch((error) => {
         alert(
-          "There was an error fetching the race history data. Please try again later.",
+          "There was an error fetching the season history data. Please try again later.",
         );
       });
   }, []);
@@ -82,25 +82,37 @@ export default function Dashboard() {
   let s5PredictionCheck;
 
   if (predictionData.predictions) {
-    s1PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 1")
-    s2PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 2" || e.session_type === "Sprint Qualifying")
-    s3PredictionCheck = predictionData.predictions.find(e => e.session_type === "Practice 3" || e.session_type === "Sprint")
-    s4PredictionCheck = predictionData.predictions.find(e => e.session_type === "Qualifying")
-    s5PredictionCheck = predictionData.predictions.find(e => e.session_type === "Race")
+    s1PredictionCheck = predictionData.predictions.find(
+      (e) => e.session_type === "Practice 1",
+    );
+    s2PredictionCheck = predictionData.predictions.find(
+      (e) =>
+        e.session_type === "Practice 2" ||
+        e.session_type === "Sprint Qualifying",
+    );
+    s3PredictionCheck = predictionData.predictions.find(
+      (e) => e.session_type === "Practice 3" || e.session_type === "Sprint",
+    );
+    s4PredictionCheck = predictionData.predictions.find(
+      (e) => e.session_type === "Qualifying",
+    );
+    s5PredictionCheck = predictionData.predictions.find(
+      (e) => e.session_type === "Race",
+    );
   }
 
   return (
     <div className="dashboard-container">
       <div className="points-history">
-        {Array.isArray(raceHistoryData) ? (
-          raceHistoryData.slice(0, Math.ceil(raceHistoryData.length / 2)).map((race, index) => (
-            <h4 key={index}>
-              {race.name} - {race.points} points
-            </h4>
-          ))
-        ) : (
-          "Loading Race History..."
-        )}
+        {Array.isArray(seasonHistoryData.season_history)
+          ? seasonHistoryData.season_history
+              .slice(0, Math.ceil(seasonHistoryData.season_history.length / 2))
+              .map((race, index) => (
+                <h4 key={index}>
+                  {race.name} - {race.points} points
+                </h4>
+              ))
+          : "Loading Race History..."}
       </div>
       <div className="middle-container">
         <h1>Hello {user.username}!</h1>
@@ -110,11 +122,26 @@ export default function Dashboard() {
               <h3>{eventData.name}</h3>
               <h4>{formatPredictionClosureTime(eventData.s1_date)}</h4>
               <div className="prediction-submission-check">
-                <h4>{eventData.s1} - {s1PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
-                <h4>{eventData.s2} - {s2PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
-                <h4>{eventData.s3} - {s3PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
-                <h4>{eventData.s4} - {s4PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
-                <h4>{eventData.s5} - {s5PredictionCheck ? "Submitted" : "Not Submitted"}</h4>
+                <h4>
+                  {eventData.s1} -{" "}
+                  {s1PredictionCheck ? "Submitted" : "Not Submitted"}
+                </h4>
+                <h4>
+                  {eventData.s2} -{" "}
+                  {s2PredictionCheck ? "Submitted" : "Not Submitted"}
+                </h4>
+                <h4>
+                  {eventData.s3} -{" "}
+                  {s3PredictionCheck ? "Submitted" : "Not Submitted"}
+                </h4>
+                <h4>
+                  {eventData.s4} -{" "}
+                  {s4PredictionCheck ? "Submitted" : "Not Submitted"}
+                </h4>
+                <h4>
+                  {eventData.s5} -{" "}
+                  {s5PredictionCheck ? "Submitted" : "Not Submitted"}
+                </h4>
               </div>
             </>
           ) : (
@@ -125,20 +152,25 @@ export default function Dashboard() {
         </div>
         <h3>Season Summary</h3>
         <div className="season-summary">
-          <h4>Total Points - Points Placeholder</h4>
-          <h4>Races Predicted - Race Amount Placeholder</h4>
+          {seasonHistoryData ? 
+          <>
+            <h4>Total Points - {seasonHistoryData.season_points}</h4>
+            <h4>Races Predicted - {seasonHistoryData.races_predicted}</h4>
+          </>
+          : <h4>Loading Season History Data...</h4>
+          }
         </div>
       </div>
       <div className="points-history">
-        {Array.isArray(raceHistoryData) ? (
-          raceHistoryData.slice(Math.ceil(raceHistoryData.length / 2)).map((race, index) => (
-            <h4 key={index}>
-              {race.name} - {race.points} points
-            </h4>
-          ))
-        ) : (
-          "Loading Race History..."
-        )}
+        {Array.isArray(seasonHistoryData.season_history)
+          ? seasonHistoryData.season_history
+              .slice(Math.ceil(seasonHistoryData.season_history.length / 2))
+              .map((race, index) => (
+                <h4 key={index}>
+                  {race.name} - {race.points} points
+                </h4>
+              ))
+          : "Loading Race History..."}
       </div>
     </div>
   );
