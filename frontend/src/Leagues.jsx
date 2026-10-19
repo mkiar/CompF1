@@ -12,7 +12,7 @@ export default function Leagues() {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/leagues")
+    fetch("http://localhost:8000/api/leagues?limit=15")
       .then((response) => response.json())
       .then((data) => {
         setLeaguesList(data.leagues);
@@ -31,7 +31,7 @@ export default function Leagues() {
     const league_mems_limit = e.target.league_mems_limit.value;
 
     try {
-      const res = await fetch("http://localhost:8000/api/create-league", {
+      const res = await fetch("http://localhost:8000/api/leagues", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export default function Leagues() {
 
   const myLeagueRequest = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/my-leagues", {
+      const res = await fetch("http://localhost:8000/api/leagues/me", {
         method: "GET",
         credentials: "include",
       }).then(async (response) => {
@@ -77,7 +77,7 @@ export default function Leagues() {
     e.preventDefault();
     try {
       const res = await fetch(
-        `http://localhost:8000/api/search-league?join_code=${e.target.join_code.value}`,
+        `http://localhost:8000/api/leagues?join_code=${e.target.join_code.value}`,
         {
           method: "GET",
         },

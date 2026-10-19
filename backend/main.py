@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import fastf1
@@ -11,6 +11,8 @@ from functools import lru_cache
 from datetime import date, datetime, timezone
 import json
 from scoring import score_session
+from fastf1.core import DataNotLoadedError
+from typing import Optional
 
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=20)
@@ -60,11 +62,7 @@ class LeagueRequest(BaseModel):
         return v
 
 class JoinLeagueRequest(BaseModel):
-    league_id: int = Field(gt=0)
-    join_code: str = Field(min_length=8, max_length=8, max_digits=8)
-
-class LeaveLeagueRequest(BaseModel):
-    league_id: int = Field(gt=0)
+    join_code: str = Field(min_length=8, max_length=8)
 
 class DisbandLeagueRequest(BaseModel):
     league_id: int = Field(gt=0)
@@ -121,8 +119,6 @@ async def lifespan(app: FastAPI):
     print(f"FastF1 version: {fastf1.__version__}")
     init_db()
     yield
-
-print(score_session(2026, 16, "Practice 1"))
 
 app = FastAPI(lifespan=lifespan)
 
@@ -302,7 +298,7 @@ def generate_join_code():
     join_code = secrets.randbelow(90000000) + 10000000
     return str(join_code)
 
-@app.post("/api/create-league")
+@app.post("/api/leagues")
 def create_league(request: Request, league: LeagueRequest):
     user = get_user_from_session(request)
 
@@ -348,38 +344,33 @@ def create_league(request: Request, league: LeagueRequest):
     return { "message": "Successfully created league" }
 
 @app.get("/api/leagues")
-def get_leagues():
+def get_public_leagues(limit: int = Query(default=15, gt=0, le=50), join_code: Optional[str] = Query(default=None, min_length=8, max_length=8)):
     db = get_db()
 
-    leagues_list = db.execute("""
-        SELECT * from leagues WHERE public = 1
-    """).fetchmany(15)
+    if join_code is not None:
+        find_league = db.execute("""
+            SELECT * from leagues WHERE join_code = ? AND public = 1
+        """, (join_code,)).fetchone()
+        
+        if not find_league:
+            db.close()
+            raise HTTPException(status_code=400, detail="Invalid join code or privated league")        
 
-    db.close()
-
-    leagues = [dict(league) for league in leagues_list]
-
-    return { "leagues": leagues }
-
-@app.get("/api/search-league")
-def search_league(join_code: str):
-    db = get_db()
-
-    find_league = db.execute("""
-        SELECT * from leagues WHERE join_code = ? AND public = 1
-    """, (join_code,)).fetchone()
-
-    if not find_league:
         db.close()
-        raise HTTPException(status_code=400, detail="Invalid join code or privated league")
+        return { "league": dict(find_league) }
+    else:
+        leagues_list = db.execute("""
+            SELECT * from leagues WHERE public = 1
+        """).fetchmany(limit)
 
-    db.close()
+        db.close()
 
-    return { "league": dict(find_league) }
+        leagues = [dict(league) for league in leagues_list]
+        return { "leagues": leagues }
 
 
-@app.post("/api/join-league")
-def get_my_leagues(request: Request, joinLeague: JoinLeagueRequest):
+@app.post("/api/leagues/{league_id}/members")
+def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
     if user is None:
         raise HTTPException(
@@ -391,15 +382,15 @@ def get_my_leagues(request: Request, joinLeague: JoinLeagueRequest):
 
     already_in_league = db.execute("""
         SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (joinLeague.league_id, user["id"],)).fetchone()
+    """, (league_id, user["id"],)).fetchone()
 
     if already_in_league:
         db.close()
         raise HTTPException(status_code=400, detail="User is already in this league")
 
     league = db.execute("""
-        SELECT * from leagues WHERE join_code = ? AND member_limit < member_count AND public = 1
-    """, (joinLeague.join_code,))
+        SELECT * from leagues WHERE id = ? AND join_code = ? AND member_limit > member_count AND public = 1
+    """, (league_id, joinLeague.join_code,)).fetchone()
 
     if not league:
         db.close()
@@ -407,18 +398,18 @@ def get_my_leagues(request: Request, joinLeague: JoinLeagueRequest):
 
     db.execute("""
         INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-    """, (joinLeague.league_id, user["id"], user["username"],))
+    """, (league_id, user["id"], user["username"],))
 
     db.execute("""
         UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
-    """, (joinLeague.league_id,))
+    """, (league_id,))
 
     db.commit()
     db.close()
 
     return { "message": "Successfully joined league" }
 
-@app.get("/api/my-leagues")
+@app.get("/api/leagues/me")
 def get_my_leagues(request: Request):
     user = get_user_from_session(request)
 
@@ -443,8 +434,8 @@ def get_my_leagues(request: Request):
     leagues = [dict(league) for league in my_leagues]
     return { "leagues": leagues }
 
-@app.post("/api/leave-league")
-def leave_league(request: Request, league: LeaveLeagueRequest):
+@app.delete("/api/leagues/{league_id}/members/{user_id}")
+def leave_league(request: Request, league_id: int = Path(gt=0), user_id: int = Path(gt=0)):
     user = get_user_from_session(request)
 
     if user is None:
@@ -452,12 +443,18 @@ def leave_league(request: Request, league: LeaveLeagueRequest):
             status_code=401,
             detail="Not logged in"
         )
+
+    if user["id"] != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only leave your own leagues"
+        )
     
     db = get_db()
 
     find_league = db.execute("""
         SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (league.league_id, user["id"],)).fetchone()
+    """, (league_id, user_id,)).fetchone()
 
     if not find_league:
         db.close()
@@ -465,19 +462,19 @@ def leave_league(request: Request, league: LeaveLeagueRequest):
 
     db.execute("""
         DELETE from league_members WHERE league_id = ? and user_id = ?
-    """, (league.league_id, user["id"],))
+    """, (league_id, user_id,))
 
     db.execute("""
         UPDATE leagues SET member_count = member_count - 1 WHERE id = ?
-    """, (league.league_id,))
+    """, (league_id,))
 
     db.commit()
     db.close()
 
     return { "message": "Successfully left league" }
 
-@app.post("/api/disband-league")
-def disband_league(request: Request, league: DisbandLeagueRequest):
+@app.delete("/api/leagues/{league_id}")
+def disband_league(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
 
     if user is None:
@@ -490,7 +487,7 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
     find_league = db.execute("""
         SELECT * from leagues WHERE id = ? AND owner_id = ?
-    """, (league.league_id, user["id"],)).fetchone()
+    """, (league_id, user["id"],)).fetchone()
 
     if not find_league:
         db.close()
@@ -498,10 +495,10 @@ def disband_league(request: Request, league: DisbandLeagueRequest):
 
     db.execute("""
         DELETE from leagues WHERE id = ? and owner_id = ?
-    """, (league.league_id, user["id"],))
+    """, (league_id, user["id"],))
     db.execute("""
         DELETE from league_members WHERE league_id = ?
-    """, (league.league_id,))
+    """, (league_id,))
 
     db.commit()
     db.close()

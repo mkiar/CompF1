@@ -5,14 +5,13 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
 
   const joinLeagueRequest = async (e, leagueId) => {
     try {
-      const res = await fetch("http://localhost:8000/api/join-league", {
+      const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          league_id: leagueId,
           join_code: e.target.value,
         }),
       }).then(async (response) => {
@@ -29,15 +28,9 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
 
   const leaveLeagueRequest = async (e, leagueId) => {
     try {
-      const res = await fetch("http://localhost:8000/api/leave-league", {
-        method: "POST",
+      const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/${user.id}`, {
+        method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          league_id: leagueId
-        }),
       }).then(async (response) => {
         if (!response.ok) {
           const message = await response.json();
@@ -52,15 +45,9 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
 
   const disbandLeagueRequest = async (e, leagueId) => {
     try {
-      const res = await fetch("http://localhost:8000/api/disband-league", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          league_id: leagueId
-        }),
+      const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}`, {
+        method: "DELETE",
+        credentials: "include"
       }).then(async (response) => {
         if (!response.ok) {
           const message = await response.json();
