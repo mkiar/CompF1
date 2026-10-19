@@ -164,6 +164,38 @@ def get_current_event():
     
     return schedule
 
+@app.get("/api/race-history")
+def get_event_schedule(request: Request):
+    user = get_user_from_session(request)
+    
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
+    db = get_db()
+
+    schedule = fastf1.get_event_schedule(date.today().year, include_testing=False)
+    if schedule.empty:
+        return {"message": "There are no event schedule races for this season."}
+    
+    event_schedule = []
+    for _, event in schedule.iterrows():
+        points = db.execute("""
+            SELECT SUM(points) as total_points
+            FROM points
+            WHERE season = ? AND round_number = ? AND event_name = ? AND user_id = ?
+        """, (date.today().year, event['RoundNumber'], event['EventName'], user["id"],)).fetchone()
+        event_schedule.append({
+            "name": event['EventName'],
+            "points": points["total_points"] if points["total_points"] is not None else 0
+        })
+
+    db.close()
+    print(event_schedule)
+    return {"race_history": event_schedule}
+
 def get_user_from_session(request: Request):
     session_token = request.cookies.get("session")
 
@@ -434,8 +466,8 @@ def get_my_leagues(request: Request):
     leagues = [dict(league) for league in my_leagues]
     return { "leagues": leagues }
 
-@app.delete("/api/leagues/{league_id}/members/{user_id}")
-def leave_league(request: Request, league_id: int = Path(gt=0), user_id: int = Path(gt=0)):
+@app.delete("/api/leagues/{league_id}/members/me")
+def leave_league(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
 
     if user is None:
@@ -443,18 +475,12 @@ def leave_league(request: Request, league_id: int = Path(gt=0), user_id: int = P
             status_code=401,
             detail="Not logged in"
         )
-
-    if user["id"] != user_id:
-        raise HTTPException(
-            status_code=403,
-            detail="You can only leave your own leagues"
-        )
     
     db = get_db()
 
     find_league = db.execute("""
         SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (league_id, user_id,)).fetchone()
+    """, (league_id, user["id"],)).fetchone()
 
     if not find_league:
         db.close()
@@ -462,7 +488,7 @@ def leave_league(request: Request, league_id: int = Path(gt=0), user_id: int = P
 
     db.execute("""
         DELETE from league_members WHERE league_id = ? and user_id = ?
-    """, (league_id, user_id,))
+    """, (league_id, user["id"],))
 
     db.execute("""
         UPDATE leagues SET member_count = member_count - 1 WHERE id = ?

@@ -5,6 +5,7 @@ import { useAuth } from "./components/AuthState";
 export default function Dashboard() {
   const [eventData, setEventData] = useState(null);
   const [predictionData, setPredictionData] = useState([])
+  const [raceHistoryData, setRaceHistoryData] = useState([])
   const { user } = useAuth();
 
   useEffect(() => {
@@ -28,6 +29,18 @@ export default function Dashboard() {
       .catch((error) => {
         alert(
           "There was an error fetching the prediction data. Please try again later.",
+        );
+      });
+      fetch("http://localhost:8000/api/race-history", {
+        credentials: "include"
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        setRaceHistoryData(data.race_history);
+      })
+      .catch((error) => {
+        alert(
+          "There was an error fetching the race history data. Please try again later.",
         );
       });
   }, []);
@@ -79,15 +92,15 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <div className="points-history">
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
+        {Array.isArray(raceHistoryData) ? (
+          raceHistoryData.slice(0, Math.ceil(raceHistoryData.length / 2)).map((race, index) => (
+            <h4 key={index}>
+              {race.name} - {race.points} points
+            </h4>
+          ))
+        ) : (
+          "Loading Race History..."
+        )}
       </div>
       <div className="middle-container">
         <h1>Hello {user.username}!</h1>
@@ -117,15 +130,15 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="points-history">
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
-        <h4>Placeholder Race History</h4>
+        {Array.isArray(raceHistoryData) ? (
+          raceHistoryData.slice(Math.ceil(raceHistoryData.length / 2)).map((race, index) => (
+            <h4 key={index}>
+              {race.name} - {race.points} points
+            </h4>
+          ))
+        ) : (
+          "Loading Race History..."
+        )}
       </div>
     </div>
   );
