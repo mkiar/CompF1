@@ -26,7 +26,7 @@ def init_db():
                 member_count INTEGER NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
-                FOREIGN KEY (owner_id) REFERENCES users(id)            
+                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE           
             );
         ''')
         cursor.execute('''
@@ -37,8 +37,8 @@ def init_db():
                 joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     
                 PRIMARY KEY (league_id, user_id),
-                FOREIGN KEY (league_id) REFERENCES leagues(id),
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (league_id) REFERENCES leagues(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
         ''')
         cursor.execute('''
@@ -51,7 +51,7 @@ def init_db():
                 prediction_json TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
            
-                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
            
                 UNIQUE (
                     user_id,
@@ -67,26 +67,22 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 expires_at TEXT NOT NULL,
 
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
         ''')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS points (
-                user_id INTEGER NOT NULL,
-                season INTEGER NOT NULL,
-                round_number INTEGER NOT NULL,
-                event_name TEXT NOT NULL,
-                session_type TEXT NOT NULL,
-                points INTEGER NOT NULL,
-                status TEXT NOT NULL,
+                prediction_id INTEGER NOT NULL PRIMARY KEY,
+                value INTEGER NOT NULL,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (prediction_id) REFERENCES predictions(id) ON DELETE CASCADE
             );
         ''')
         conn.commit()
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn

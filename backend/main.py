@@ -14,6 +14,8 @@ from scoring import score_session
 from fastf1.core import DataNotLoadedError
 from typing import Optional
 
+print(score_session(2026, 16, "Race"))
+
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=20)
     email: str
@@ -163,38 +165,6 @@ def get_current_event():
         return {"message": "There are no more races for this season."}
     
     return schedule
-
-@app.get("/api/race-history")
-def get_event_schedule(request: Request):
-    user = get_user_from_session(request)
-    
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Not logged in"
-        )
-    
-    db = get_db()
-
-    schedule = fastf1.get_event_schedule(date.today().year, include_testing=False)
-    if schedule.empty:
-        return {"message": "There are no event schedule races for this season."}
-    
-    event_schedule = []
-    for _, event in schedule.iterrows():
-        points = db.execute("""
-            SELECT SUM(points) as total_points
-            FROM points
-            WHERE season = ? AND round_number = ? AND event_name = ? AND user_id = ?
-        """, (date.today().year, event['RoundNumber'], event['EventName'], user["id"],)).fetchone()
-        event_schedule.append({
-            "name": event['EventName'],
-            "points": points["total_points"] if points["total_points"] is not None else 0
-        })
-
-    db.close()
-    print(event_schedule)
-    return {"race_history": event_schedule}
 
 def get_user_from_session(request: Request):
     session_token = request.cookies.get("session")
@@ -603,3 +573,45 @@ def check_predictions(request: Request):
     db.close()
 
     return { "predictions": predictions }
+
+@app.get("/api/season-history")
+def get_event_schedule(request: Request):
+    user = get_user_from_session(request)
+    
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
+    schedule = fastf1.get_event_schedule(date.today().year, include_testing=False)
+    if schedule.empty:
+        return {"message": "There are no event schedule races for this season."}
+
+    db = get_db()
+
+    season_points = 0
+    races_predicted = 0
+    event_schedule = []
+
+    for _, event in schedule.iterrows():
+        points = db.execute("""
+            SELECT COALESCE(SUM(pt.value), 0) AS total_points,
+                COUNT(DISTINCT p.id) AS prediction_count
+                FROM predictions AS p
+                LEFT JOIN points AS pt
+                ON pt.prediction_id = p.id
+                WHERE p.season = ?
+                AND p.round_number = ?
+                AND p.user_id = ?
+        """, (date.today().year, event['RoundNumber'], user["id"],)).fetchone()
+        event_schedule.append({
+            "name": event['EventName'],
+            "points": points["total_points"]
+        })
+        if points["total_points"] > 0:
+            season_points += points["total_points"]
+            races_predicted += 1
+
+    db.close()
+    return {"season_history": event_schedule, "season_points": season_points, "races_predicted": races_predicted}
