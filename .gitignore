@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 compf1.db
+.pytest_cache
+.vscode
+.venv
 
 # Editor directories and files
 .vscode/*

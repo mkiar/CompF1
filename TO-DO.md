@@ -3,16 +3,16 @@
 - ~~Fix RaceCard formatDateTime function logic~~ (Completed)
 - ~~Figure out how to style RaceCard and whether to have many styles across all cards or keep consistent~~ (Completed)
 - ~~Setup database and plan out schema to use~~ (Completed)
-- Plan league functionality, rules, options, ~~member limits~~, and point system
+- ~~Plan league functionality, rules, options, member limits, and point system~~ (Completed)
 - ~~Plan out duels where the user can 1v1 AI or another user in predicting upcoming race weekend~~ (Scraped)
 - ~~Plan out and implement user login/signup while ensuring safe data collection through backend api calls~~ (Completed for now, have some new possible ideas)
 - ~~Figure out what necessary information I absolutely need from the FastF1 api without overcrowding webpage~~ (Completed)
 - ~~Plan out structure of homepage UI and what information I need to display to onboard users~~ (Completed)
 - ~~Plan out structure of leagues UI~~ (Completed)
 - ~~Replace CompF1 description with something better~~ (Completed)
-- Plan a list of colors to use consistently throughout the web page
+- ~~Plan a list of colors to use consistently throughout the web page~~ (Completed)
 - ~~Add input and data validation to ensure outside api calls can't put random data in db~~ (Completed)
-- Create a points system among prediction categories
+- ~~Create a points system among prediction categories~~ (Completed)
 - ~~Change onboarding steps description~~ (Completed)
 - ~~Change alert notification if signup api response is not okay~~ (Completed)
 - ~~Email validation on signup page frontend~~ (Handled on backend instead)
@@ -22,5 +22,6 @@
 - Add global leaderboard maybe
 - Fix ValueError alert error messages on frontend
 - League owners should have a settings menu to change league visibility and manage league members
+- Add user settings
 
 # I'll add more and strikethrough items in this list as I think of ideas and complete these tasks

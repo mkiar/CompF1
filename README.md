@@ -45,12 +45,11 @@ Predictions are scored based on how close a driver finishes to the predicted pos
 - [x] Prediction storage
 - [x] Basic scoring logic
 - [x] League creation and membership
+- [x] Prediction history and statistics
 
 ### In Progress
-- [ ] User dashboard
+- [ ] User settings
 - [ ] League leaderboards
-- [ ] Head-to-head competition
-- [ ] Prediction history and statistics
 
 ## Architecture
 
