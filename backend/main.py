@@ -14,8 +14,6 @@ from scoring import score_session
 from fastf1.core import DataNotLoadedError
 from typing import Optional
 
-print(score_session(2026, 16, "Race"))
-
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=20)
     email: str
@@ -173,23 +171,23 @@ def get_user_from_session(request: Request):
         return None
 
     db = get_db()
+    try:
+        session = db.execute("""
+            SELECT users.id,
+                users.username,
+                sessions.expires_at
+            FROM sessions
+            JOIN users ON sessions.user_id = users.id
+            WHERE sessions.token = ? AND sessions.expires_at > datetime('now')
+            """, (session_token,)
+        ).fetchone()
 
-    session = db.execute("""
-        SELECT users.id,
-               users.username,
-               sessions.expires_at
-        FROM sessions
-        JOIN users ON sessions.user_id = users.id
-        WHERE sessions.token = ? AND sessions.expires_at > datetime('now')
-        """, (session_token,)
-    ).fetchone()
+        if not session:
+            return None
 
-    db.close()
-
-    if not session:
-        return None
-
-    return session
+        return session
+    finally:
+        db.close()
 
 @app.get("/api/me")
 def get_current_user(request: Request):
@@ -211,90 +209,93 @@ password_hasher = PasswordHash.recommended()
 @app.post('/api/signup')
 def user_signup(user: SignupRequest):
     db = get_db()
-    existing_user = db.execute("""
-        SELECT * FROM users
-        WHERE email = ? OR username = ?
-    """, (user.email, user.username.lower())).fetchone()
-    if existing_user:
+    try:
+        existing_user = db.execute("""
+            SELECT * FROM users
+            WHERE email = ? OR username = ?
+        """, (user.email, user.username.lower())).fetchone()
+        if existing_user:
+            raise HTTPException(status_code=409, detail="Username or email already exists")
+        
+        hashed = password_hasher.hash(user.password)
+
+        db.execute("""
+            INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)
+        """, (user.username, user.email, hashed))
+
+        db.commit()
+
+        return { "message": "Account was created successfully" }
+    finally:
         db.close()
-        raise HTTPException(status_code=400, detail="Username or email already exists")
-    hashed = password_hasher.hash(user.password)
-
-    db.execute("""
-        INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)
-    """, (user.username, user.email, hashed))
-
-    db.commit()
-    db.close()
-
-    return { "message": "Account was created successfully" }
 
 @app.post("/api/login")
 def login(user: LoginRequest, response: Response):
     db = get_db()
+    try:
+        database_user = db.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (user.username,)
+        ).fetchone()
 
-    database_user = db.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (user.username,)
-    ).fetchone()
+        if not database_user:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    if not database_user:
-        db.close()
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        if not password_hasher.verify(user.password, database_user["password_hash"]):
+            raise HTTPException(status_code=404, detail="Invalid username or password")
 
-    if not password_hasher.verify(user.password, database_user["password_hash"]):
-        db.close()
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        session_token = secrets.token_urlsafe(32)
 
-    session_token = secrets.token_urlsafe(32)
+        db.execute("""
+            INSERT INTO sessions (token, user_id, expires_at)
+            VALUES (?, ?, datetime('now', '+7 days'))
+            """,(session_token, database_user["id"])
+        )
 
-    db.execute("""
-        INSERT INTO sessions (token, user_id, expires_at)
-        VALUES (?, ?, datetime('now', '+7 days'))
-        """,(session_token, database_user["id"])
-    )
+        db.commit()
 
-    db.commit()
-    db.close()
+        response.set_cookie(
+            key="session",
+            value=session_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 7 # this equates to 7 days
+        )
 
-    response.set_cookie(
-        key="session",
-        value=session_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=60 * 60 * 24 * 7 # this equates to 7 days
-    )
-
-    return {
-        "message": "Login successful",
-        "user": {
-            "id": database_user["id"],
-            "username": database_user["username"]
+        return {
+            "message": "Login successful",
+            "user": {
+                "id": database_user["id"],
+                "username": database_user["username"]
+            }
         }
-    }
+    finally:
+        db.close()
 
 @app.post("/api/logout")
 def logout(request: Request, response: Response):
     session_token = request.cookies.get("session")
+    db = get_db()
 
-    if session_token:
-        db = get_db()
-        db.execute(
-            """
-            DELETE FROM sessions
-            WHERE token = ?
-            """,
-            (session_token,)
-        )
-        db.commit()
+    try:
+        if session_token:
+            db.execute(
+                """
+                DELETE FROM sessions
+                WHERE token = ?
+                """,
+                (session_token,)
+            )
+            db.commit()
+
+        response.delete_cookie("session")
+
+        return {
+            "message": "Logged out successfully"
+        }
+    finally:
         db.close()
-
-    response.delete_cookie("session")
-
-    return {
-        "message": "Logged out successfully"
-    }
 
 def generate_join_code():
     join_code = secrets.randbelow(90000000) + 10000000
@@ -305,70 +306,68 @@ def create_league(request: Request, league: LeagueRequest):
     user = get_user_from_session(request)
 
     if user is None:
-            raise HTTPException(
-                status_code=401,
-                detail="Not logged in"
-            )
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
     
     db = get_db()
+    try:
+        league_already_exists = db.execute(
+            """SELECT * from leagues WHERE name = ?""", (league.name.lower(),)
+        ).fetchone()
 
-    league_already_exists = db.execute(
-        """SELECT * from leagues WHERE name = ?""", (league.name.lower(),)
-    ).fetchone()
+        if league_already_exists:
+            raise HTTPException(status_code=409, detail="League name already exists")
 
-    if league_already_exists:
+        join_code = 0
+        
+        while True:
+            join_code = generate_join_code()
+            league_join_code_exists = db.execute("SELECT * from leagues WHERE join_code = ?", (join_code,)).fetchone()
+            if not league_join_code_exists:
+                break
+
+        db.execute("""
+            INSERT INTO leagues (name, owner_id, owner_username, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (league.name, user["id"], user["username"], join_code, league.public, league.member_limit, 1,))
+
+        result = db.execute(""" 
+            SELECT * from leagues WHERE name = ? AND owner_id = ?
+        """, (league.name, user["id"],)).fetchone()
+
+        db.execute("""
+            INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
+        """, (result["id"], user["id"], user["username"],))
+
+        db.commit()
+
+        return { "message": "Successfully created league" }
+    finally:
         db.close()
-        raise HTTPException(status_code=400, detail="League name already exists")
-
-    join_code = 0
-    
-    while True:
-        join_code = generate_join_code()
-        league_join_code_exists = db.execute("SELECT * from leagues WHERE join_code = ?", (join_code,)).fetchone()
-        if not league_join_code_exists:
-            break
-
-    db.execute("""
-        INSERT INTO leagues (name, owner_id, owner_username, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (league.name, user["id"], user["username"], join_code, league.public, league.member_limit, 1,))
-
-    result = db.execute(""" 
-        SELECT * from leagues WHERE name = ? AND owner_id = ?
-    """, (league.name, user["id"],)).fetchone()
-
-    db.execute("""
-        INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-    """, (result["id"], user["id"], user["username"],))
-
-    db.commit()
-    db.close()
-
-    return { "message": "Successfully created league" }
 
 @app.get("/api/leagues")
 def get_public_leagues(limit: int = Query(default=15, gt=0, le=50), join_code: Optional[str] = Query(default=None, min_length=8, max_length=8)):
     db = get_db()
+    try:
+        if join_code is not None:
+            find_league = db.execute("""
+                SELECT * from leagues WHERE join_code = ? AND public = 1
+            """, (join_code,)).fetchone()
+            
+            if not find_league:
+                raise HTTPException(status_code=404, detail="Invalid join code or privated league")        
 
-    if join_code is not None:
-        find_league = db.execute("""
-            SELECT * from leagues WHERE join_code = ? AND public = 1
-        """, (join_code,)).fetchone()
-        
-        if not find_league:
-            db.close()
-            raise HTTPException(status_code=400, detail="Invalid join code or privated league")        
+            return { "league": dict(find_league) }
+        else:
+            leagues_list = db.execute("""
+                SELECT * from leagues WHERE public = 1
+            """).fetchmany(limit)
 
+            leagues = [dict(league) for league in leagues_list]
+            return { "leagues": leagues }
+    finally:
         db.close()
-        return { "league": dict(find_league) }
-    else:
-        leagues_list = db.execute("""
-            SELECT * from leagues WHERE public = 1
-        """).fetchmany(limit)
-
-        db.close()
-
-        leagues = [dict(league) for league in leagues_list]
-        return { "leagues": leagues }
 
 
 @app.post("/api/leagues/{league_id}/members")
@@ -381,35 +380,34 @@ def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int 
         )
 
     db = get_db()
+    try:
+        already_in_league = db.execute("""
+            SELECT * from league_members WHERE league_id = ? AND user_id = ?
+        """, (league_id, user["id"],)).fetchone()
 
-    already_in_league = db.execute("""
-        SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (league_id, user["id"],)).fetchone()
+        if already_in_league:
+            raise HTTPException(status_code=409, detail="User is already in this league")
 
-    if already_in_league:
+        league = db.execute("""
+            SELECT * from leagues WHERE id = ? AND join_code = ? AND member_limit > member_count AND public = 1
+        """, (league_id, joinLeague.join_code,)).fetchone()
+
+        if not league:
+            raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
+
+        db.execute("""
+            INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
+        """, (league_id, user["id"], user["username"],))
+
+        db.execute("""
+            UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
+        """, (league_id,))
+
+        db.commit()
+
+        return { "message": "Successfully joined league" }
+    finally:
         db.close()
-        raise HTTPException(status_code=400, detail="User is already in this league")
-
-    league = db.execute("""
-        SELECT * from leagues WHERE id = ? AND join_code = ? AND member_limit > member_count AND public = 1
-    """, (league_id, joinLeague.join_code,)).fetchone()
-
-    if not league:
-        db.close()
-        raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
-
-    db.execute("""
-        INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-    """, (league_id, user["id"], user["username"],))
-
-    db.execute("""
-        UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
-    """, (league_id,))
-
-    db.commit()
-    db.close()
-
-    return { "message": "Successfully joined league" }
 
 @app.get("/api/leagues/me")
 def get_my_leagues(request: Request):
@@ -422,19 +420,19 @@ def get_my_leagues(request: Request):
         )
 
     db = get_db()
+    try:
+        my_leagues = db.execute("""
+            SELECT l.* from leagues l INNER JOIN league_members m ON l.id = m.league_id WHERE m.user_id = ?
+        """, (user["id"],)).fetchall()
 
-    my_leagues = db.execute("""
-        SELECT l.* from leagues l INNER JOIN league_members m ON l.id = m.league_id WHERE m.user_id = ?
-    """, (user["id"],)).fetchall()
+        if not my_leagues:
+            return { "leagues": [] }
 
-    if not my_leagues:
+
+        leagues = [dict(league) for league in my_leagues]
+        return { "leagues": leagues }
+    finally:
         db.close()
-        return { "leagues": [] }
-
-    db.close()
-
-    leagues = [dict(league) for league in my_leagues]
-    return { "leagues": leagues }
 
 @app.delete("/api/leagues/{league_id}/members/me")
 def leave_league(request: Request, league_id: int = Path(gt=0)):
@@ -447,27 +445,50 @@ def leave_league(request: Request, league_id: int = Path(gt=0)):
         )
     
     db = get_db()
+    try:
+        find_league = db.execute("""
+            SELECT * from league_members WHERE league_id = ? AND user_id = ?
+        """, (league_id, user["id"],)).fetchone()
 
-    find_league = db.execute("""
-        SELECT * from league_members WHERE league_id = ? AND user_id = ?
-    """, (league_id, user["id"],)).fetchone()
+        if not find_league:
+            raise HTTPException(status_code=404, detail="Invalid league")
 
-    if not find_league:
+        db.execute("""
+            DELETE from league_members WHERE league_id = ? and user_id = ?
+        """, (league_id, user["id"],))
+
+        db.execute("""
+            UPDATE leagues SET member_count = member_count - 1 WHERE id = ?
+        """, (league_id,))
+
+        db.commit()
+
+        return { "message": "Successfully left league" }
+    finally:
         db.close()
-        raise HTTPException(status_code=400, detail="Invalid league")
 
-    db.execute("""
-        DELETE from league_members WHERE league_id = ? and user_id = ?
-    """, (league_id, user["id"],))
+@app.get("/api/leagues/{league_id}/members")
+def get_league_members(request: Request, league_id: int = Path(gt=0)):
+    user = get_user_from_session(request)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+        
+    db = get_db()
+    try:
+        league_members = db.execute("""
+            SELECT 
+        """, (league_id,)).fetchall()
 
-    db.execute("""
-        UPDATE leagues SET member_count = member_count - 1 WHERE id = ?
-    """, (league_id,))
+        if not league_members:
+            raise HTTPException(status_code=404, detail="Invalid league")
+    finally:
+        db.close()
 
-    db.commit()
-    db.close()
-
-    return { "message": "Successfully left league" }
+    
 
 @app.delete("/api/leagues/{league_id}")
 def disband_league(request: Request, league_id: int = Path(gt=0)):
@@ -480,26 +501,26 @@ def disband_league(request: Request, league_id: int = Path(gt=0)):
         )
     
     db = get_db()
+    try:
+        find_league = db.execute("""
+            SELECT * from leagues WHERE id = ? AND owner_id = ?
+        """, (league_id, user["id"],)).fetchone()
 
-    find_league = db.execute("""
-        SELECT * from leagues WHERE id = ? AND owner_id = ?
-    """, (league_id, user["id"],)).fetchone()
+        if not find_league:
+            raise HTTPException(status_code=404, detail="Invalid league")
 
-    if not find_league:
+        db.execute("""
+            DELETE from leagues WHERE id = ? and owner_id = ?
+        """, (league_id, user["id"],))
+        db.execute("""
+            DELETE from league_members WHERE league_id = ?
+        """, (league_id,))
+
+        db.commit()
+
+        return { "message": "Successfully disbanded league" }
+    finally:
         db.close()
-        raise HTTPException(status_code=400, detail="Invalid league")
-
-    db.execute("""
-        DELETE from leagues WHERE id = ? and owner_id = ?
-    """, (league_id, user["id"],))
-    db.execute("""
-        DELETE from league_members WHERE league_id = ?
-    """, (league_id,))
-
-    db.commit()
-    db.close()
-
-    return { "message": "Successfully disbanded league" }
 
 @app.post("/api/predictions")
 def make_prediction(request: Request, prediction: PredictionRequest):
@@ -517,32 +538,33 @@ def make_prediction(request: Request, prediction: PredictionRequest):
     
     if current_time > first_session_start_time:
         raise HTTPException(
-            status_code=401,
+            status_code=403,
             detail="Making predictions is closed"
         )
     
     
     db = get_db()
+    try:
+        made_prediction = db.execute(""" 
+            SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
+        """, (user["id"], date.today().year, prediction.round_num, prediction.session_type,)).fetchone()
 
-    made_prediction = db.execute(""" 
-        SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
-    """, (user["id"], date.today().year, prediction.round_num, prediction.session_type,)).fetchone()
+        if made_prediction:
+            db.execute("""
+                UPDATE predictions SET prediction_json = ? WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
+            """, (json.dumps(prediction.selections), user["id"], date.today().year, prediction.round_num, prediction.session_type,))
+        else:
+            db.execute("""
+                INSERT INTO predictions (user_id, season, round_number, session_type, prediction_json) VALUES (?, ?, ?, ?, ?)
+            """, (user["id"], date.today().year, prediction.round_num, prediction.session_type, json.dumps(prediction.selections),))
 
-    if made_prediction:
-        db.execute("""
-            UPDATE predictions SET prediction_json = ? WHERE user_id = ? AND season = ? AND round_number = ? AND session_type = ?
-        """, (json.dumps(prediction.selections), user["id"], date.today().year, prediction.round_num, prediction.session_type,))
-    else:
-        db.execute("""
-            INSERT INTO predictions (user_id, season, round_number, session_type, prediction_json) VALUES (?, ?, ?, ?, ?)
-        """, (user["id"], date.today().year, prediction.round_num, prediction.session_type, json.dumps(prediction.selections),))
+        db.commit()
 
-    db.commit()
-    db.close()
-
-    return {
-        "message": "Successfully made prediction"
-    }
+        return {
+            "message": "Successfully made prediction"
+        }
+    finally:
+        db.close()
 
 @app.get("/api/predictions")
 def check_predictions(request: Request):
@@ -559,20 +581,19 @@ def check_predictions(request: Request):
         return {"message": "There are no races to check predictions"}
 
     db = get_db()
+    try:
+        get_predictions = db.execute("""
+            SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ?
+        """, (user["id"], date.today().year, event["round_num"],)).fetchall()
 
-    get_predictions = db.execute("""
-        SELECT * from predictions WHERE user_id = ? AND season = ? AND round_number = ?
-    """, (user["id"], date.today().year, event["round_num"],)).fetchall()
+        if not get_predictions:
+            return { "message": "No predictions to show for this race" }
 
-    if get_predictions is None:
+        predictions = [dict(prediction) for prediction in get_predictions]
+
+        return { "predictions": predictions }
+    finally:
         db.close()
-        return { "message": "No predictions to show for this race" }
-
-    predictions = [dict(prediction) for prediction in get_predictions]
-
-    db.close()
-
-    return { "predictions": predictions }
 
 @app.get("/api/season-history")
 def get_event_schedule(request: Request):
@@ -590,28 +611,30 @@ def get_event_schedule(request: Request):
 
     db = get_db()
 
-    season_points = 0
-    races_predicted = 0
-    event_schedule = []
+    try:
+        season_points = 0
+        races_predicted = 0
+        event_schedule = []
 
-    for _, event in schedule.iterrows():
-        points = db.execute("""
-            SELECT COALESCE(SUM(pt.value), 0) AS total_points,
-                COUNT(DISTINCT p.id) AS prediction_count
-                FROM predictions AS p
-                LEFT JOIN points AS pt
-                ON pt.prediction_id = p.id
-                WHERE p.season = ?
-                AND p.round_number = ?
-                AND p.user_id = ?
-        """, (date.today().year, event['RoundNumber'], user["id"],)).fetchone()
-        event_schedule.append({
-            "name": event['EventName'],
-            "points": points["total_points"]
-        })
-        if points["total_points"] > 0:
-            season_points += points["total_points"]
-            races_predicted += 1
+        for _, event in schedule.iterrows():
+            points = db.execute("""
+                SELECT COALESCE(SUM(pt.value), 0) AS total_points,
+                    COUNT(DISTINCT p.id) AS prediction_count
+                    FROM predictions AS p
+                    LEFT JOIN points AS pt
+                    ON pt.prediction_id = p.id
+                    WHERE p.season = ?
+                    AND p.round_number = ?
+                    AND p.user_id = ?
+            """, (date.today().year, event['RoundNumber'], user["id"],)).fetchone()
+            event_schedule.append({
+                "name": event['EventName'],
+                "points": points["total_points"]
+            })
+            if points["total_points"] > 0:
+                season_points += points["total_points"]
+                races_predicted += 1
 
-    db.close()
-    return {"season_history": event_schedule, "season_points": season_points, "races_predicted": races_predicted}
+        return {"season_history": event_schedule, "season_points": season_points, "races_predicted": races_predicted}
+    finally:
+        db.close()
