@@ -231,7 +231,7 @@ def login(user: LoginRequest, response: Response):
     db = get_db()
     try:
         database_user = db.execute(
-            "SELECT * FROM users WHERE username = ?",
+            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
             (user.username,)
         ).fetchone()
 
