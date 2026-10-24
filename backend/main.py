@@ -186,7 +186,7 @@ def get_user_from_session(request: Request):
     finally:
         db.close()
 
-@app.get("/api/me")
+@app.get("/api/me", status_code=200)
 def get_current_user(request: Request):
     user = get_user_from_session(request)
 
@@ -272,6 +272,14 @@ def login(user: LoginRequest, response: Response):
 
 @app.post("/api/logout", status_code=200)
 def logout(request: Request, response: Response):
+    user = get_user_from_session(request)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    
     session_token = request.cookies.get("session")
     db = get_db()
 
