@@ -64,9 +64,6 @@ class LeagueRequest(BaseModel):
 class JoinLeagueRequest(BaseModel):
     join_code: str = Field(min_length=8, max_length=8)
 
-class DisbandLeagueRequest(BaseModel):
-    league_id: int = Field(gt=0)
-
 P1_DRIVER_CAP = 22
 P2_DRIVER_CAP = 22
 P3_DRIVER_CAP = 22
@@ -206,7 +203,7 @@ def get_current_user(request: Request):
 
 password_hasher = PasswordHash.recommended()
 
-@app.post('/api/signup')
+@app.post('/api/signup', status_code=201)
 def user_signup(user: SignupRequest):
     db = get_db()
     try:
@@ -229,7 +226,7 @@ def user_signup(user: SignupRequest):
     finally:
         db.close()
 
-@app.post("/api/login")
+@app.post("/api/login", status_code=200)
 def login(user: LoginRequest, response: Response):
     db = get_db()
     try:
@@ -242,7 +239,7 @@ def login(user: LoginRequest, response: Response):
             raise HTTPException(status_code=401, detail="Invalid username or password")
 
         if not password_hasher.verify(user.password, database_user["password_hash"]):
-            raise HTTPException(status_code=404, detail="Invalid username or password")
+            raise HTTPException(status_code=401, detail="Invalid username or password")
 
         session_token = secrets.token_urlsafe(32)
 
@@ -273,7 +270,7 @@ def login(user: LoginRequest, response: Response):
     finally:
         db.close()
 
-@app.post("/api/logout")
+@app.post("/api/logout", status_code=200)
 def logout(request: Request, response: Response):
     session_token = request.cookies.get("session")
     db = get_db()
@@ -301,7 +298,7 @@ def generate_join_code():
     join_code = secrets.randbelow(90000000) + 10000000
     return str(join_code)
 
-@app.post("/api/leagues")
+@app.post("/api/leagues", status_code=201)
 def create_league(request: Request, league: LeagueRequest):
     user = get_user_from_session(request)
 
@@ -346,7 +343,7 @@ def create_league(request: Request, league: LeagueRequest):
     finally:
         db.close()
 
-@app.get("/api/leagues")
+@app.get("/api/leagues", status_code=200)
 def get_public_leagues(limit: int = Query(default=15, gt=0, le=50), join_code: Optional[str] = Query(default=None, min_length=8, max_length=8)):
     db = get_db()
     try:
@@ -370,7 +367,7 @@ def get_public_leagues(limit: int = Query(default=15, gt=0, le=50), join_code: O
         db.close()
 
 
-@app.post("/api/leagues/{league_id}/members")
+@app.post("/api/leagues/{league_id}/members", status_code=201)
 def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
     if user is None:
@@ -409,7 +406,7 @@ def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int 
     finally:
         db.close()
 
-@app.get("/api/leagues/me")
+@app.get("/api/leagues/me", status_code=200)
 def get_my_leagues(request: Request):
     user = get_user_from_session(request)
 
@@ -434,7 +431,7 @@ def get_my_leagues(request: Request):
     finally:
         db.close()
 
-@app.delete("/api/leagues/{league_id}/members/me")
+@app.delete("/api/leagues/{league_id}/members/me", status_code=200)
 def leave_league(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
 
@@ -467,7 +464,7 @@ def leave_league(request: Request, league_id: int = Path(gt=0)):
     finally:
         db.close()
 
-@app.get("/api/leagues/{league_id}/members")
+@app.get("/api/leagues/{league_id}/members", status_code=200)
 def get_league_members(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
     
@@ -490,7 +487,7 @@ def get_league_members(request: Request, league_id: int = Path(gt=0)):
 
     
 
-@app.delete("/api/leagues/{league_id}")
+@app.delete("/api/leagues/{league_id}", status_code=200)
 def disband_league(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
 
@@ -522,7 +519,7 @@ def disband_league(request: Request, league_id: int = Path(gt=0)):
     finally:
         db.close()
 
-@app.post("/api/predictions")
+@app.post("/api/predictions", status_code=201)
 def make_prediction(request: Request, prediction: PredictionRequest):
     user = get_user_from_session(request)
     
@@ -566,7 +563,7 @@ def make_prediction(request: Request, prediction: PredictionRequest):
     finally:
         db.close()
 
-@app.get("/api/predictions")
+@app.get("/api/predictions", status_code=200)
 def check_predictions(request: Request):
     user = get_user_from_session(request)
     event = load_current_event()
@@ -595,7 +592,7 @@ def check_predictions(request: Request):
     finally:
         db.close()
 
-@app.get("/api/season-history")
+@app.get("/api/season-history", status_code=200)
 def get_event_schedule(request: Request):
     user = get_user_from_session(request)
     
