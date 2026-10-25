@@ -45,22 +45,47 @@
 
 .league-card {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
+  flex-direction: column;
+  max-width: 100%;
   gap: 10px;
   margin-right: 25px;
   margin-left: 25px;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.league-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  width: 100%
+}
+
+.league-leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 70%;
+  margin-left: 15%;
+}
+
+.league-member {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 50%;
   background-color: var(--card-background);
+  border: 1px solid var(--border);
+  height: 60px;
 }
 
 .league-card-btn {
   border-radius: 8px;
   width: 65px;
-  height: 45px;
+  height: 35px;
   color: black;
   font-size: small;
 }

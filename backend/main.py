@@ -472,7 +472,7 @@ def leave_league(request: Request, league_id: int = Path(gt=0)):
     finally:
         db.close()
 
-@app.get("/api/leagues/{league_id}/members", status_code=200)
+@app.get("/api/leagues/{league_id}/leaderboard", status_code=200)
 def get_league_members(request: Request, league_id: int = Path(gt=0)):
     user = get_user_from_session(request)
     
@@ -485,11 +485,27 @@ def get_league_members(request: Request, league_id: int = Path(gt=0)):
     db = get_db()
     try:
         league_members = db.execute("""
-            SELECT 
+        SELECT
+            u.id,
+            u.username,
+            COALESCE(SUM(pt.value), 0) AS total_points
+            FROM league_members AS lm
+            JOIN users AS u
+                ON lm.user_id = u.id
+            LEFT JOIN predictions AS p
+                ON p.user_id = u.id
+            LEFT JOIN points AS pt
+                ON pt.prediction_id = p.id
+            WHERE lm.league_id = ?
+            GROUP BY u.id, u.username
+            ORDER BY total_points DESC, u.username ASC; 
         """, (league_id,)).fetchall()
 
         if not league_members:
             raise HTTPException(status_code=404, detail="Invalid league")
+
+        leaderboard = [dict(member) for member in league_members]
+        return { "leaderboard": leaderboard }
     finally:
         db.close()
 

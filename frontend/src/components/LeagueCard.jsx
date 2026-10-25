@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../components/AuthState";
-export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = false, needDisbandBtn = false }) {
+export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn = false, needDisbandBtn = false }) {
   const { user } = useAuth();
+  const [leagueMembers, setLeagueMembers] = useState(null)
 
   const joinLeagueRequest = async (e, leagueId) => {
     try {
@@ -60,49 +61,81 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
     }
   };
 
+  const getLeagueMembers = async (e, leagueId) => {
+    if (leagueMembers) {
+      setLeagueMembers(null)
+    } else {
+      try {
+        const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/leaderboard`, {
+          method: "GET",
+          credentials: "include"
+        }).then(async (response) => {
+          if (!response.ok) {
+            const message = await response.json();
+            return alert(message.detail);
+          }
+          const data = await response.json()
+          setLeagueMembers(data.leaderboard)
+        })
+      } catch (err) {
+        return alert("An error has occurred with get league members request");
+      }
+    }
+  }
+
   return (
     <div className="league-card">
-      <h3 style={{ marginRight: "auto" }}>
-        {league.name} created by {league.owner_username}
-      </h3>
-      <h3>Join Code: {league.join_code}</h3>
-      <h3 style={{ marginLeft: "auto" }}>
-        {league.member_count} / {league.member_limit} Members
-      </h3>
-      {needJoinBtn ? (
-        <button
-          className="league-card-btn"
-          style={{ backgroundColor: "green" }}
-          value={league.join_code}
-          onClick={(e) => joinLeagueRequest(e, league.id)}
-        >
-          Join
-        </button>
-      ) : (
-        <></>
-      )}
-      {needLeaveBtn ? (
-        <button
-          className="league-card-btn"
-          style={{ backgroundColor: "yellow" }}
-          onClick={(e) => leaveLeagueRequest(e, league.id)}
-        >
-          Leave
-        </button>
-      ) : (
-        <></>
-      )}
-      {needDisbandBtn ? (
-        <button
-          className="league-card-btn"
-          style={{ backgroundColor: "red" }}
-          onClick={(e) => disbandLeagueRequest(e, league.id)}
-        >
-          Disband
-        </button>
-      ) : (
-        <></>
-      )}
+      <button className="league-btn" onClick={(e) => getLeagueMembers(e, league.id)}>
+        <h3 style={{ marginRight: "auto" }}>
+          {league.name} created by {league.owner_username}
+        </h3>
+        <h3>Join Code: {league.join_code}</h3>
+        <h3 style={{ marginLeft: "auto" }}>
+          {league.member_count} / {league.member_limit} Members
+        </h3>
+        {needJoinBtn ? (
+          <button
+            className="league-card-btn"
+            style={{ backgroundColor: "green" }}
+            value={league.join_code}
+            onClick={(e) => joinLeagueRequest(e, league.id)}
+          >
+            Join
+          </button>
+        ) : (
+          <></>
+        )}
+        {needLeaveBtn ? (
+          <button
+            className="league-card-btn"
+            style={{ backgroundColor: "yellow" }}
+            onClick={(e) => leaveLeagueRequest(e, league.id)}
+          >
+            Leave
+          </button>
+        ) : (
+          <></>
+        )}
+        {needDisbandBtn ? (
+          <button
+            className="league-card-btn"
+            style={{ backgroundColor: "red" }}
+            onClick={(e) => disbandLeagueRequest(e, league.id)}
+          >
+            Disband
+          </button>
+        ) : (
+          <></>
+        )}
+      </button>
+      <div className="league-leaderboard">
+        {leagueMembers ? (Object.values(leagueMembers).map(member => {
+          return <div className="league-member">
+          <p>{member.username}</p>
+          <p>{member.total_points} Points</p>
+          </div>
+        })) : <></>}
+      </div>
     </div>
   );
 }
