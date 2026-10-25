@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from main import app
 import database
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def test_signup_valid_account(test_db):
     client = TestClient(app)
@@ -240,13 +240,13 @@ def test_expired_session(test_db):
     assert response.json()['username'] == "Hello", (f"Got {response.status_code}: {response.text}")
     assert client.cookies.get("session") is not None
 
-    # change session expires at db field to now
+    # change session expires at db field to yesterday
     user_id = response.json()['id']
     token = client.cookies["session"]
     try:
         db.execute("""
         UPDATE sessions SET expires_at = ? WHERE user_id = ? AND token = ?
-        """, (datetime.now(), user_id, token,))
+        """, (datetime.now() - timedelta(days=1), user_id, token,))
         db.commit()
     finally:
         db.close()

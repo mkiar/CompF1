@@ -28,7 +28,7 @@ export default function RaceCard({ league, needJoinBtn = false, needLeaveBtn = f
 
   const leaveLeagueRequest = async (e, leagueId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/${user.id}`, {
+      const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/me`, {
         method: "DELETE",
         credentials: "include",
       }).then(async (response) => {
