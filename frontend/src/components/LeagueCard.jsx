@@ -145,6 +145,38 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
           <></>
         )}
       </button>
+      <div className="league-settings">
+        {owner && leagueMembers ? 
+        <> 
+          <form className="league-settings-form">
+            <h3 style={{ marginRight: "auto" }}>League Settings</h3>
+            <label>
+                Change League Name:{" "}
+                <input
+                  type="text"
+                  minLength="3"
+                  maxLength="20"
+                  placeholder="League Name"
+                  name="league_name"
+                ></input>
+              </label>
+            <label>Visibility: <select><option>Public</option><option>Private</option></select></label>
+            <label>
+                League Members Limit:{" "}
+                <input
+                  type="number"
+                  min={league.member_count}
+                  max="25"
+                  name="league_mems_limit"
+                  placeholder="25"
+                ></input>
+              </label>
+              <button type="submit" style={{ marginLeft: "auto", backgroundColor: "green" }} className="league-card-btn">Save</button>
+          </form>
+        </>
+        : 
+        <></>}
+      </div>
       <div className="league-leaderboard">
         {leagueMembers ? (Object.values(leagueMembers).map((member, index) => {
           return (
@@ -153,7 +185,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
             <p style={{ marginRight: "auto" }}>{index + 1}.</p>
             <p>{member.username}</p>
             <p style={{ marginLeft: "auto"}}>{member.total_points} Points</p>
-            {owner && member.id != user.id? 
+            {owner && member.id != user.id ? 
               <button
                 className="league-card-btn"
                 style={{ backgroundColor: "red" }}

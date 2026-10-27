@@ -72,6 +72,22 @@
   margin-left: 15%;
 }
 
+.league-settings-form {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  padding-right: 10px;
+  padding-left: 10px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border);
+  height: 40px;
+  width: 90%;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
 .league-member {
   display: flex;
   flex-direction: row;
