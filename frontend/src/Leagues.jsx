@@ -160,7 +160,7 @@ export default function Leagues() {
             {myLeaguesList ? (
               Object.values(myLeaguesList).map((league) => {
                 if (league.owner_id === user.id) {
-                  return <LeagueCard league={league} key={league.id} needDisbandBtn={true}/>;
+                  return <LeagueCard league={league} key={league.id} needDisbandBtn={true} owner={true}/>;
                 } 
                 return <LeagueCard league={league} key={league.id} needLeaveBtn={true}/>;
               })

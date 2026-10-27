@@ -498,7 +498,7 @@ def get_league_members(request: Request, league_id: int = Path(gt=0)):
                 ON pt.prediction_id = p.id
             WHERE lm.league_id = ?
             GROUP BY u.id, u.username
-            ORDER BY total_points DESC, u.username ASC; 
+            ORDER BY total_points DESC, u.username ASC, u.id ASC; 
         """, (league_id,)).fetchall()
 
         if not league_members:
@@ -540,6 +540,41 @@ def disband_league(request: Request, league_id: int = Path(gt=0)):
         db.commit()
 
         return { "message": "Successfully disbanded league" }
+    finally:
+        db.close()
+
+@app.delete("/api/leagues/{league_id}/members/{user_id}", status_code=200)
+def kick_member_from_league(request: Request, league_id: int = Path(gt=0), user_id: int = Path(gt=0)):
+    user = get_user_from_session(request)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+
+    if user_id == user["id"]:
+        raise HTTPException(status_code=403, detail="You can't kick yourself out")
+
+    db = get_db()
+
+    try:
+        league_owner = db.execute("""
+            SELECT * from leagues WHERE id = ? AND owner_id = ?
+        """, (league_id, user["id"])).fetchone()
+        if not league_owner:
+            raise HTTPException(status_code=403, detail="You don't have access to this league permission")
+        cursor = db.execute("""
+            DELETE from league_members WHERE league_id = ? AND user_id = ?
+        """, (league_id, user_id,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="User is not a member of this league")
+        db.execute("""
+            UPDATE leagues SET member_count = member_count - 1 WHERE id = ?
+        """, (league_id,))
+        db.commit()
+
+        return { "message": "Successfully kicked user from league" }
     finally:
         db.close()
 

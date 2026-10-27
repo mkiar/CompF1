@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../components/AuthState";
-export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn = false, needDisbandBtn = false }) {
+export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn = false, needDisbandBtn = false, owner = false }) {
   const { user } = useAuth();
   const [leagueMembers, setLeagueMembers] = useState(null)
 
@@ -83,6 +83,23 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
     }
   }
 
+  const kickMember = async (e, leagueId, userId) => {
+    try {
+        const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/${userId}`, {
+          method: "DELETE",
+          credentials: "include"
+        }).then(async (response) => {
+          if (!response.ok) {
+            const message = await response.json();
+            return alert(message.detail);
+          }
+          window.location.reload();
+        })
+      } catch (err) {
+        return alert("An error has occurred with kick member request");
+      }
+  }
+
   return (
     <div className="league-card">
       <button className="league-btn" onClick={(e) => getLeagueMembers(e, league.id)}>
@@ -129,11 +146,24 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
         )}
       </button>
       <div className="league-leaderboard">
-        {leagueMembers ? (Object.values(leagueMembers).map(member => {
-          return <div className="league-member">
-          <p>{member.username}</p>
-          <p>{member.total_points} Points</p>
+        {leagueMembers ? (Object.values(leagueMembers).map((member, index) => {
+          return (
+          <>
+          <div className="league-member">
+            <p style={{ marginRight: "auto" }}>{index + 1}.</p>
+            <p>{member.username}</p>
+            <p style={{ marginLeft: "auto"}}>{member.total_points} Points</p>
+            {owner && member.id != user.id? 
+              <button
+                className="league-card-btn"
+                style={{ backgroundColor: "red" }}
+                onClick={(e) => kickMember(e, league.id, member.id)}
+              >
+              Kick
+              </button> : <></>}
           </div>
+          </>
+          )
         })) : <></>}
       </div>
     </div>
