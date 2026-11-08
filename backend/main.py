@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from email_validator import validate_email
 import secrets
 from functools import lru_cache
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import json
 from scoring import score_session
 from fastf1.core import DataNotLoadedError
@@ -63,6 +63,18 @@ class LeagueRequest(BaseModel):
 
 class JoinLeagueRequest(BaseModel):
     join_code: str = Field(min_length=8, max_length=8)
+
+class UpdateLeagueRequest(BaseModel):
+    id: int = Field(gt=0)
+    name: Optional[str] = Field(default=None, min_length=3, max_length=20)
+    public: Optional[bool] = Field(default=None)
+    member_limit: Optional[int] = Field(default=None, gt=0, lt=26)
+
+    @field_validator("name")
+    def valid_league_name(cls, v):
+        if v is not None and not all(c.isalpha() or c.isspace() for c in v):
+            raise ValueError("League name must be alphabetic with whitespaces allowed")
+        return v
 
 P1_DRIVER_CAP = 22
 P2_DRIVER_CAP = 22
@@ -334,16 +346,16 @@ def create_league(request: Request, league: LeagueRequest):
                 break
 
         db.execute("""
-            INSERT INTO leagues (name, owner_id, owner_username, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (league.name, user["id"], user["username"], join_code, league.public, league.member_limit, 1,))
+            INSERT INTO leagues (name, owner_id, join_code, public, member_limit, member_count) VALUES (?, ?, ?, ?, ?, ?)
+        """, (league.name, user["id"], join_code, league.public, league.member_limit, 1,))
 
         result = db.execute(""" 
             SELECT * from leagues WHERE name = ? AND owner_id = ?
         """, (league.name, user["id"],)).fetchone()
 
         db.execute("""
-            INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-        """, (result["id"], user["id"], user["username"],))
+            INSERT INTO league_members (league_id, user_id) VALUES (?, ?)
+        """, (result["id"], user["id"],))
 
         db.commit()
 
@@ -357,20 +369,62 @@ def get_public_leagues(limit: int = Query(default=15, gt=0, le=50), join_code: O
     try:
         if join_code is not None:
             find_league = db.execute("""
-                SELECT * from leagues WHERE join_code = ? AND public = 1
+                SELECT * from leagues WHERE join_code = ?
             """, (join_code,)).fetchone()
             
             if not find_league:
-                raise HTTPException(status_code=404, detail="Invalid join code or privated league")        
+                raise HTTPException(status_code=404, detail="Invalid join code")        
 
             return { "league": dict(find_league) }
         else:
             leagues_list = db.execute("""
-                SELECT * from leagues WHERE public = 1
+                SELECT users.username AS owner_username, l.* FROM users INNER JOIN leagues l ON l.public = 1 AND l.member_count < l.member_limit AND users.id = l.owner_id
             """).fetchmany(limit)
 
+            if not leagues_list:
+                return { "leagues": [] }
+
             leagues = [dict(league) for league in leagues_list]
+
             return { "leagues": leagues }
+    finally:
+        db.close()
+
+@app.patch("/api/leagues", status_code=204)
+def update_league(request: Request, league: UpdateLeagueRequest):
+    user = get_user_from_session(request)
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not logged in"
+        )
+    db = get_db()
+    try:
+        update_league = db.execute("""
+            SELECT l.updated_league_name_at AS league_name_cooldown, l.owner_id FROM leagues l WHERE l.id = ? AND l.owner_id = ?
+        """, (league.id, user["id"])).fetchone()
+        if not update_league:
+            raise HTTPException(status_code=403, detail="You don't have access to this league permission")
+        if league.name is not None:
+            if datetime.now() < datetime.strptime(update_league['league_name_cooldown'], "%Y-%m-%d %H:%M:%S") + timedelta(days=7):
+                raise HTTPException(status_code=403, detail="You can only update the league name once every 7 days")
+            league_name_exists = db.execute("""
+                SELECT * from leagues WHERE name = ? AND id = ?
+            """, (league.name, league.id,)).fetchone()
+            if league_name_exists:
+                raise HTTPException(status_code=409, detail="League name already exists")
+            db.execute("""
+                UPDATE leagues SET name = ? WHERE id = ?
+            """, (league.name, league.id,))
+        if league.public is not None:
+            db.execute("""
+                UPDATE leagues SET public = ? WHERE id = ?
+            """, (league.public, league.id,))
+        if league.member_limit is not None:
+            db.execute("""
+                UPDATE leagues SET member_limit = ? WHERE id = ?
+            """, (league.member_limit, league.id,))
+        db.commit()
     finally:
         db.close()
 
@@ -394,15 +448,15 @@ def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int 
             raise HTTPException(status_code=409, detail="User is already in this league")
 
         league = db.execute("""
-            SELECT * from leagues WHERE id = ? AND join_code = ? AND member_limit > member_count AND public = 1
+            SELECT * from leagues WHERE id = ? AND join_code = ? AND member_limit > member_count
         """, (league_id, joinLeague.join_code,)).fetchone()
 
         if not league:
             raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
 
         db.execute("""
-            INSERT INTO league_members (league_id, user_id, user_username) VALUES (?, ?, ?)
-        """, (league_id, user["id"], user["username"],))
+            INSERT INTO league_members (league_id, user_id) VALUES (?, ?, ?)
+        """, (league_id, user["id"],))
 
         db.execute("""
             UPDATE leagues SET member_count = member_count + 1 WHERE id = ?
@@ -427,14 +481,14 @@ def get_my_leagues(request: Request):
     db = get_db()
     try:
         my_leagues = db.execute("""
-            SELECT l.* from leagues l INNER JOIN league_members m ON l.id = m.league_id WHERE m.user_id = ?
+            SELECT u.username AS owner_username, l.* FROM leagues l INNER JOIN league_members m ON l.id = m.league_id INNER JOIN users u ON l.owner_id = u.id WHERE m.user_id = ?
         """, (user["id"],)).fetchall()
 
         if not my_leagues:
             return { "leagues": [] }
 
-
         leagues = [dict(league) for league in my_leagues]
+
         return { "leagues": leagues }
     finally:
         db.close()
