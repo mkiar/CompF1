@@ -96,44 +96,72 @@ export default function Leagues() {
 
   const getTabContent = (selectedTab) => {
     switch (selectedTab) {
-      case "create-league":
+      case "get-started":
         return (
           <>
-            <form className="create-league-form" onSubmit={createLeagueRequest}>
-              <h3>Create Your Own League</h3>
-              <label>
-                League Name:{" "}
+            <div className="get-started-container">
+              <form className="create-league-form" onSubmit={createLeagueRequest}>
+                <h3>Create Your Own League</h3>
+                <label>
+                  League Name:{" "}
+                  <input
+                    type="text"
+                    minLength="3"
+                    maxLength="20"
+                    placeholder="League Name"
+                    name="league_name"
+                    required
+                  ></input>
+                </label>
+                <label>
+                  Visibility:{" "}
+                  <select name="league_visibility" required>
+                    <option>Public</option>
+                    <option>Private</option>
+                  </select>
+                </label>
+                <label>
+                  League Members Limit:{" "}
+                  <input
+                    type="number"
+                    min="2"
+                    max="25"
+                    name="league_mems_limit"
+                    placeholder="25"
+                    required
+                  ></input>
+                </label>
+                <button type="submit" className="create-league-btns">
+                  Create League
+                </button>
+              </form>
+              <h1>OR</h1>
+              <form className="join-league-form" onSubmit={searchLeagueRequest}>
+                <h3>Join a League</h3>
                 <input
                   type="text"
-                  minLength="3"
-                  maxLength="20"
-                  placeholder="League Name"
-                  name="league_name"
+                  minLength="8"
+                  maxLength="8"
+                  placeholder="Join Code"
+                  name="join_code"
                   required
                 ></input>
-              </label>
-              <label>
-                Visibility:{" "}
-                <select name="league_visibility" required>
-                  <option>Public</option>
-                  <option>Private</option>
-                </select>
-              </label>
-              <label>
-                League Members Limit:{" "}
-                <input
-                  type="number"
-                  min="2"
-                  max="25"
-                  name="league_mems_limit"
-                  placeholder="25"
-                  required
-                ></input>
-              </label>
-              <button type="submit" className="create-league-btns">
-                Create League
-              </button>
-            </form>
+                <button type="submit" className="search-league-btns">
+                  Search
+                </button>
+              </form>
+            </div> 
+            <div className="search-result-container">
+              {searchLeague ? (
+                  <>
+                    {" "}
+                    <h3>Search Result</h3>{" "}
+                    <LeagueCard league={searchLeague} needJoinBtn={true} />{" "}
+                  </>
+                ) : (
+                  <></>
+              )}
+            </div>
           </>
         );
       case "public-leagues":
@@ -169,34 +197,6 @@ export default function Leagues() {
             )}
           </>
         );
-      case "join-leagues":
-        return (
-          <>
-            <form className="join-league-form" onSubmit={searchLeagueRequest}>
-              <h3>Join a League</h3>
-              <input
-                type="text"
-                minLength="8"
-                maxLength="8"
-                placeholder="Join Code"
-                name="join_code"
-                required
-              ></input>
-              <button type="submit" className="search-league-btns">
-                Search
-              </button>
-            </form>
-            {searchLeague ? (
-              <>
-                {" "}
-                <h3>Search Result</h3>{" "}
-                <LeagueCard league={searchLeague} needJoinBtn={true} />{" "}
-              </>
-            ) : (
-              <></>
-            )}
-          </>
-        );
       default:
         return <p>Could not find that tab</p>;
     }
@@ -211,10 +211,10 @@ export default function Leagues() {
       <h1>Welcome to CompF1 Leagues</h1>
       <div className="tab-selection">
         <button
-          onClick={() => setCurrentTab("create-league")}
+          onClick={() => setCurrentTab("get-started")}
           className="tab-btns"
         >
-          Create League
+          Get Started
         </button>
         <button
           onClick={() => setCurrentTab("public-leagues")}
@@ -227,12 +227,6 @@ export default function Leagues() {
           className="tab-btns"
         >
           My Leagues
-        </button>
-        <button
-          onClick={() => setCurrentTab("join-leagues")}
-          className="tab-btns"
-        >
-          Join League
         </button>
       </div>
       <div className="selected-tab-content">{getTabContent(currentTab)}</div>

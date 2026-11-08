@@ -25,21 +25,16 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 50px;
-  width: 50%;
-  margin-left: 20%;
-  margin-right: 20%;
   background-color: var(--card-background);
 }
 
 .join-league-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
   border-radius: 8px;
   padding: 50px;
   border: 1px solid var(--border);
-  margin-right: 40%;
-  margin-left: 40%;
   background-color: var(--card-background);
 }
 
@@ -107,4 +102,12 @@
   height: 35px;
   color: black;
   font-size: small;
+}
+
+.get-started-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 50px;
 }
