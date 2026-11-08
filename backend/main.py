@@ -455,7 +455,7 @@ def join_league(request: Request, joinLeague: JoinLeagueRequest, league_id: int 
             raise HTTPException(status_code=400, detail="Join code is invalid or league is full")
 
         db.execute("""
-            INSERT INTO league_members (league_id, user_id) VALUES (?, ?, ?)
+            INSERT INTO league_members (league_id, user_id) VALUES (?, ?)
         """, (league_id, user["id"],))
 
         db.execute("""
