@@ -5,6 +5,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
   const [leagueMembers, setLeagueMembers] = useState(null)
 
   const joinLeagueRequest = async (e, leagueId) => {
+    e.preventDefault();
     try {
       const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members`, {
         method: "POST",
@@ -28,6 +29,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
   };
 
   const leaveLeagueRequest = async (e, leagueId) => {
+    e.preventDefault();
     try {
       const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/me`, {
         method: "DELETE",
@@ -45,6 +47,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
   };
 
   const disbandLeagueRequest = async (e, leagueId) => {
+    e.preventDefault();
     try {
       const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}`, {
         method: "DELETE",
@@ -62,6 +65,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
   };
 
   const getLeagueMembers = async (e, leagueId) => {
+    e.preventDefault();
     if (leagueMembers) {
       setLeagueMembers(null)
     } else {
@@ -84,6 +88,7 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
   }
 
   const kickMember = async (e, leagueId, userId) => {
+    e.preventDefault();
     try {
         const res = await fetch(`http://localhost:8000/api/leagues/${leagueId}/members/${userId}`, {
           method: "DELETE",
@@ -98,6 +103,37 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
       } catch (err) {
         return alert("An error has occurred with kick member request");
       }
+  }
+
+  const updateLeagueRequest = async (e, leagueId) => {
+    e.preventDefault();
+    const league_name = e.target.league_name.value;
+    const league_mems_limit = e.target.league_mems_limit.value;
+    const league_visibility = e.target.visibility.value;
+    try {
+      const res = await fetch(`http://localhost:8000/api/leagues`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: leagueId,
+          name: league_name == "" ? null : league_name,
+          member_limit: league_mems_limit == "" ? null : league_mems_limit,
+          public: league_visibility == "" ? null : league_visibility,
+        }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const message = await response.json();
+          console.log(message.detail)
+          return alert(message.detail);
+        }
+        window.location.reload();
+      });
+    } catch (err) {
+      return alert("An error has occurred with update league request");
+    }
   }
 
   return (
@@ -148,10 +184,10 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
       <div className="league-settings">
         {owner && leagueMembers ? 
         <> 
-          <form className="league-settings-form">
+          <form className="league-settings-form" onSubmit={(e) => { updateLeagueRequest(e, league.id) }}>
             <h3 style={{ marginRight: "auto" }}>League Settings</h3>
             <label>
-                Change League Name:{" "}
+                Edit League Name:{" "}
                 <input
                   type="text"
                   minLength="3"
@@ -160,9 +196,9 @@ export default function LeagueCard({ league, needJoinBtn = false, needLeaveBtn =
                   name="league_name"
                 ></input>
               </label>
-            <label>Visibility: <select><option>Public</option><option>Private</option></select></label>
+            <label>Edit Visibility: <select name="visibility"><option value={true}>Public</option><option value={false}>Private</option></select></label>
             <label>
-                League Members Limit:{" "}
+              Edit League Members Limit:{" "}
                 <input
                   type="number"
                   min={league.member_count}
