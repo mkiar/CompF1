@@ -32,7 +32,7 @@ export default function Header({ children }) {
         <a href="/leagues">Leagues</a>
         <div className="header-right" style={{ marginLeft: "auto" }}>
           {user ? (
-            <a onClick={() => handleLogoutRequest()}>Logout</a>
+            <a href="/settings">Settings</a>
           ) : (
             <a href="/login">Login</a>
           )}

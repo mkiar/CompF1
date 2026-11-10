@@ -1,0 +1,37 @@
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border-radius: 8px;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.profile-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.account-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    gap: 15px;
+}
+
+.change-form {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    justify-content: center;
+}

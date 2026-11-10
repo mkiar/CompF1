@@ -7,6 +7,7 @@ import Leagues from "./Leagues.jsx";
 import Login from "./Login.jsx";
 import Signup from "./Signup.jsx";
 import Prediction from "./Prediction";
+import Settings from "./Settings.jsx";
 import { useAuth } from "./components/AuthState.jsx";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/signup" element={user ? <Dashboard /> : <Signup />} />
         <Route path="/leagues" element={user ? <Leagues /> : <Login />} />
         <Route path="/dashboard" element={user ? <Dashboard /> : <Login />} />
+        <Route path="/settings" element={user ? <Settings /> : <Login />} />
         <Route
           path="/make-prediction"
           element={user ? <Prediction /> : <Login />}

@@ -184,6 +184,7 @@ def get_user_from_session(request: Request):
         session = db.execute("""
             SELECT users.id,
                 users.username,
+                users.email,
                 sessions.expires_at
             FROM sessions
             JOIN users ON sessions.user_id = users.id
@@ -211,6 +212,7 @@ def get_current_user(request: Request):
     return {
         "id": user["id"],
         "username": user["username"],
+        "email": user["email"]
     }
 
 password_hasher = PasswordHash.recommended()
